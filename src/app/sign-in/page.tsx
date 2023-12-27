@@ -3,9 +3,10 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 
-const baseUrl = process.env.VERCEL_URL
-   ? `https://${process.env.VERCEL_URL}`
-   : "http://localhost:3000"
+const baseUrl =
+   process.env.NODE_ENV === "production"
+      ? `https://amindstimeline.vercel.app`
+      : "http://localhost:3000"
 
 export default async function Login({
    searchParams,
