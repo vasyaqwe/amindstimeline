@@ -29,6 +29,7 @@ export default async function Login({
 
       const { error, data } = await supabase.auth.signInWithOAuth({
          provider: "google",
+
          options: {
             queryParams: {
                access_type: "offline",
