@@ -3,11 +3,6 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 
-const baseUrl =
-   process.env.NODE_ENV === "production"
-      ? `https://amindstimeline.vercel.app`
-      : "http://localhost:3000"
-
 export default async function Login({
    searchParams,
 }: {
@@ -27,6 +22,11 @@ export default async function Login({
 
       const cookieStore = cookies()
       const supabase = createClient(cookieStore)
+
+      const baseUrl =
+         process.env.NODE_ENV === "development"
+            ? "http://localhost:3000"
+            : `https://amindstimeline.vercel.app`
 
       const { error, data } = await supabase.auth.signInWithOAuth({
          provider: "google",
