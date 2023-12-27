@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --avatar-size: 30px;
+
+    --background: 0 0% 6%;
+    --foreground: 0 0% 94%;
+
+    --popover: 240 5% 10%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 240 5% 11%;
+    --primary-foreground: 0 0% 94%;
+
+    --secondary: 260 4% 12%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 2% 8%;
+    --muted-foreground: 240 2% 35%;
+
+    --accent: 37 100% 80%;
+    --accent-2: 25 92% 51%;
+    --accent-foreground: 0 0% 7%;
+
+    --destructive: 0 84.2% 48%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 240 2% 20%;
+    --input: 0 0% 25%;
+    --ring: 0 0% 98%;
+
+    --radius: 0.75rem;
+  }
+}
+
+*::selection {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground))
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+}
+
+/* editor */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: hsl(var(--muted-foreground));
+  font-weight: 400;
+  pointer-events: none;
+  height: 0;
+}
+
+.ProseMirror-gapcursor::after {
+  border-top: 1px solid hsl(var(--foreground)) !important;
+}
+
+.prose img {
+  border-radius: .75rem;
+}
+
+.prose h1 {
+  margin-bottom: .5em;
+}
+
+.prose h2 {
+  margin-top: .5em;
+  margin-bottom: .5em;
+}
+
+.prose li p {
+  margin-block: .25em;
+}
+
+.prose p:empty {
+  display: none;
+}
+
+.prose a:hover {
+  text-decoration: unset !important;
+}
+
+.scroll-x {
+  scrollbar-width: none;
+}
+
+.scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+/* @keyframes fadeIn {
+  0% {
+    background-color: hsl(var(--));
+  }
+} */
