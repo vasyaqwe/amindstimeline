@@ -78,6 +78,11 @@
   margin-block: .25em;
 }
 
+.prose p:last-child,
+.prose p:first-child {
+  margin: 0 !important;
+}
+
 .prose p:empty {
   display: none;
 }
@@ -94,8 +99,23 @@
   display: none;
 }
 
-/* @keyframes fadeIn {
+@keyframes animate-in {
   0% {
-    background-color: hsl(var(--));
+    background-color: hsl(var(--accent) / .1);
+    border: 1px solid hsl(var(--accent) / .5);
   }
-} */
+
+  50% {
+    background-color: hsl(var(--accent) / .1);
+    border: 1px solid hsl(var(--accent) / .5);
+  }
+
+  100% {
+    border: 1px solid hsl(var(--border) / .3);
+    background-color: hsl(var(--muted));
+  }
+}
+
+.animate-in-note {
+  animation: animate-in 2s ease-in-out;
+}

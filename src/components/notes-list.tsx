@@ -5,14 +5,13 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { NOTES_LIMIT, notesMutationKey, notesQueryKey } from "@/config"
 import { useIntersection } from "@/hooks/use-intersection"
 import { createClient } from "@/lib/supabase/client"
-import { cn } from "@/lib/utils"
 import { type Row } from "@/types/supabase"
 import {
    type QueryStatus,
    useInfiniteQuery,
    useMutationState,
 } from "@tanstack/react-query"
-import { AnimatePresence, motion } from "framer-motion"
+import { AnimatePresence } from "framer-motion"
 import { useEffect } from "react"
 
 type NotesListProps = {
@@ -24,6 +23,7 @@ async function fetchNotes({ pageParam = 1 }) {
 
    const from = (pageParam - 1) * NOTES_LIMIT
    const to = from + NOTES_LIMIT - 1
+   await new Promise((resolve) => setTimeout(resolve, 400))
 
    const { data, error } = await supabase
       .from("notes")
@@ -73,38 +73,11 @@ export function NotesList({ initialNotes }: NotesListProps) {
       <div className="flex flex-col gap-4 border-t border-border/60 pt-7">
          {notes.length > 0 ? (
             <AnimatePresence mode="wait">
-               {notes?.map((n) => (
-                  <motion.div
-                     key={n?.id}
-                     initial={{
-                        height: n.id.startsWith("optimistic") ? 0 : "auto",
-                        opacity: n.id.startsWith("optimistic") ? 0 : 1,
-                     }}
-                     animate={{
-                        height: "auto",
-                        opacity: 1,
-                        transition: {
-                           duration: 1,
-                           type: "spring",
-                           bounce: 0.4,
-                           opacity: { delay: 0.1 },
-                        },
-                     }}
-                     transition={{
-                        duration: 0.6,
-                        type: "spring",
-                        bounce: 0,
-                        opacity: { duration: 0.12 },
-                     }}
-                     className={cn(
-                        "prose prose-invert rounded-2xl border border-border/30 bg-muted transition"
-                        // n.id.startsWith("optimistic")
-                        //    ? "border-accent/50 bg-accent/10 hover:border-accent/50"
-                        //    : "border-border/30 bg-muted hover:border-border/60"
-                     )}
-                  >
-                     <EditorOutput html={n?.content ?? ""} />
-                  </motion.div>
+               {notes?.map((note) => (
+                  <EditorOutput
+                     note={note}
+                     key={note?.id}
+                  />
                ))}
             </AnimatePresence>
          ) : variables.length < 1 ? (

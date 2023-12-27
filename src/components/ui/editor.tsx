@@ -4,6 +4,7 @@ import {
    useEditor,
    EditorContent,
    type Editor as CoreEditor,
+   Extension,
 } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Image from "@tiptap/extension-image"
@@ -38,11 +39,15 @@ import {
    Strikethrough,
    Undo,
 } from "lucide-react"
+import { type HTMLMotionProps, motion } from "framer-motion"
+import { type Row } from "@/types/supabase"
+import { Skeleton } from "@/components/ui/skeleton"
 
 type EditorProps<T extends boolean> = {
    value: string
    onChange: (value: string) => void
    className?: string
+   isPending: boolean
 } & (T extends true
    ? {
         shouldSetImages: true
@@ -63,6 +68,17 @@ type Node = {
    }
 }
 
+const ShiftEnterCreateExtension = Extension.create({
+   addKeyboardShortcuts() {
+      return {
+         "Shift-Enter": ({ editor }) => {
+            editor.commands.enter()
+            return true
+         },
+      }
+   },
+})
+
 export const Editor = <T extends boolean>({
    value,
    onChange,
@@ -70,6 +86,7 @@ export const Editor = <T extends boolean>({
    shouldSetImages = false,
    setImages,
    onKeyDown,
+   isPending,
    setImagesToDeleteFromServer,
    ...props
 }: EditorProps<T>) => {
@@ -80,6 +97,7 @@ export const Editor = <T extends boolean>({
       extensions: [
          StarterKit,
          Link,
+         ShiftEnterCreateExtension,
          Image.configure({
             HTMLAttributes: {
                class: "rounded-md mb-5",
@@ -107,6 +125,16 @@ export const Editor = <T extends boolean>({
    })
    // eslint-disable-next-line @typescript-eslint/no-explicit-any
    const previousState = useRef<any>()
+
+   useEffect(() => {
+      if (!editor) return
+
+      if (isPending) {
+         editor.setOptions({ editable: false })
+      } else {
+         editor.setOptions({ editable: true })
+      }
+   }, [isPending, editor])
 
    useEffect(() => {
       if (!isMounted && editor && shouldSetImages) {
@@ -157,7 +185,7 @@ export const Editor = <T extends boolean>({
       }
    }
 
-   if (!editor) return null
+   if (!editor) return <Skeleton className="min-h-[176.5px]" />
 
    async function onImageChange(e: ChangeEvent<HTMLInputElement>) {
       if (e.target.files?.[0]) {
@@ -380,6 +408,7 @@ export const Editor = <T extends boolean>({
                content={"Undo"}
             >
                <button
+                  type="button"
                   onMouseOver={() => setIsAnyTooltipVisible(true)}
                   onMouseLeave={() => setIsAnyTooltipVisible(false)}
                   className={cn(
@@ -399,6 +428,7 @@ export const Editor = <T extends boolean>({
                content={"Redo"}
             >
                <button
+                  type="button"
                   onMouseOver={() => setIsAnyTooltipVisible(true)}
                   onMouseLeave={() => setIsAnyTooltipVisible(false)}
                   className={cn(
@@ -421,17 +451,46 @@ export const Editor = <T extends boolean>({
 
 // eslint-disable-next-line react/display-name
 export const EditorOutput = ({
-   html,
    className,
+   note,
    ...props
-}: ComponentProps<"div"> & { html: string }) => {
+}: HTMLMotionProps<"div"> & { note: Row<"notes"> }) => {
+   const shouldAnimate = note.id.startsWith("optimistic")
+
    return (
-      <div
-         className={cn("p-5", className)}
-         dangerouslySetInnerHTML={{
-            __html: html,
+      <motion.div
+         initial={{
+            height: shouldAnimate ? 0 : "auto",
+            opacity: shouldAnimate ? 0 : 1,
          }}
+         animate={{
+            opacity: 1,
+            height: "auto",
+            transition: {
+               type: "spring",
+               bounce: 0.5,
+               opacity: { delay: 0.1 },
+            },
+         }}
+         transition={{
+            duration: 0.6,
+            type: "spring",
+            bounce: 0,
+            opacity: { duration: 0.12 },
+         }}
+         className={cn(
+            "prose prose-invert rounded-2xl border border-border/30 bg-muted transition-colors hover:border-border",
+            shouldAnimate ? "animate-in-note" : "",
+            className
+         )}
          {...props}
-      />
+      >
+         <div
+            className="px-5 py-4"
+            dangerouslySetInnerHTML={{
+               __html: note.content?.slice(0, -7) ?? "",
+            }}
+         />
+      </motion.div>
    )
 }

@@ -18,7 +18,7 @@ export function CreateNoteForm() {
 
    const formRef = useRef<HTMLFormElement>(null)
 
-   const { mutate } = useMutation({
+   const { mutate, isPending } = useMutation({
       mutationKey: notesMutationKey,
       mutationFn: async ({ content }: { content: string }) => {
          await supabase.from("notes").insert({ content }).single()
@@ -56,6 +56,9 @@ export function CreateNoteForm() {
          queryClient.setQueryData(notesQueryKey, context?.previousNotes)
       },
       onSettled: async () => {
+         await new Promise((resolve) => setTimeout(resolve, 1000))
+         //delay for animation to complete
+
          return await queryClient.invalidateQueries({ queryKey: notesQueryKey })
       },
    })
@@ -65,11 +68,12 @@ export function CreateNoteForm() {
          ref={formRef}
          onSubmit={(e) => {
             e.preventDefault()
-            mutate({ content })
+            if (!isPending) mutate({ content })
          }}
          className="pb-7"
       >
          <Editor
+            isPending={isPending}
             value={content}
             onChange={(value) => setContent(value)}
             onKeyDown={() => formRef.current?.requestSubmit()}
