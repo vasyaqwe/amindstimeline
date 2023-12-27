@@ -3,6 +3,10 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 
+const baseUrl = process.env.VERCEL_URL
+   ? `https://${process.env.VERCEL_URL}`
+   : "http://localhost:3000"
+
 export default async function Login({
    searchParams,
 }: {
@@ -30,7 +34,7 @@ export default async function Login({
                access_type: "offline",
                prompt: "consent",
             },
-            redirectTo: `http://localhost:3000/auth/callback`,
+            redirectTo: `${baseUrl}/auth/callback`,
          },
       })
 
@@ -46,6 +50,9 @@ export default async function Login({
          className="grid h-svh place-content-center"
          action={signIn}
       >
+         <h1 className="mb-5 text-center font-accent text-6xl text-accent">
+            a minds timeline.
+         </h1>
          <Button size={"lg"}>
             <svg
                xmlns="http://www.w3.org/2000/svg"

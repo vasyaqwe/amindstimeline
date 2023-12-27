@@ -109,7 +109,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
             </AnimatePresence>
          ) : variables.length < 1 ? (
             <h1 className="mt-5 text-center font-accent text-5xl">
-               Things to come.
+               Things to come...
             </h1>
          ) : null}
          {isFetchingNextPage && notes.length > 1 && (
