@@ -1,7 +1,6 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
-import { useTranslations } from "next-intl"
 import { cva } from "class-variance-authority"
 
 export type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
@@ -34,22 +33,17 @@ type ErrorMessageProps = {
    error:
       | {
            message: string
-           dynamicParams: Record<string, string | number>
         }
       | undefined
 } & React.ComponentProps<"p">
 
 function ErrorMessage({ error, className, ...props }: ErrorMessageProps) {
-   const t = useTranslations("common")
-
-   type TranslationKeys = Parameters<typeof t>[0]
-
    return error?.message ? (
       <p
          className={cn("mt-2 text-sm text-destructive", className)}
          {...props}
       >
-         {t(error.message as TranslationKeys, error.dynamicParams)}
+         {error.message}
       </p>
    ) : null
 }
