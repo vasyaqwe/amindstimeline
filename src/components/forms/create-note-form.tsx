@@ -56,10 +56,9 @@ export function CreateNoteForm() {
          queryClient.setQueryData(notesQueryKey, context?.previousNotes)
       },
       onSettled: async () => {
-         await new Promise((resolve) => setTimeout(resolve, 1000))
+         // await new Promise((resolve) => setTimeout(resolve, 1000))
          //delay for animation to complete
-
-         return await queryClient.invalidateQueries({ queryKey: notesQueryKey })
+         // void queryClient.invalidateQueries({ queryKey: notesQueryKey })
       },
    })
 

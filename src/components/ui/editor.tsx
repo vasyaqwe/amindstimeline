@@ -23,8 +23,6 @@ import {
    type ComponentProps,
 } from "react"
 import { FileButton } from "@/components/ui/file-button"
-// import { useUploadThing } from "@/lib/uploadthing"
-// import { toast } from "sonner"
 import {
    Bold,
    Heading1,
@@ -37,8 +35,7 @@ import {
    Strikethrough,
    Undo,
 } from "lucide-react"
-import { type HTMLMotionProps, motion } from "framer-motion"
-import { type Row } from "@/types/supabase"
+
 import { Skeleton } from "@/components/ui/skeleton"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
@@ -226,6 +223,8 @@ export const Editor = ({
    }
 
    async function removeImages() {
+      if (imagesToDeleteFromBucket.length < 1) return
+
       await supabase.storage.from("files").remove(imagesToDeleteFromBucket)
    }
 
@@ -446,51 +445,5 @@ export const Editor = ({
             editor={editor}
          />
       </div>
-   )
-}
-
-// eslint-disable-next-line react/display-name
-export const EditorOutput = ({
-   className,
-   note,
-   ...props
-}: HTMLMotionProps<"div"> & { note: Row<"notes"> }) => {
-   const shouldAnimate = note.id.startsWith("optimistic")
-
-   return (
-      <motion.div
-         initial={{
-            height: shouldAnimate ? 0 : "auto",
-            opacity: shouldAnimate ? 0 : 1,
-         }}
-         animate={{
-            opacity: 1,
-            height: "auto",
-            transition: {
-               type: "spring",
-               bounce: 0.5,
-               opacity: { delay: 0.1 },
-            },
-         }}
-         transition={{
-            duration: 0.6,
-            type: "spring",
-            bounce: 0,
-            opacity: { duration: 0.12 },
-         }}
-         className={cn(
-            "prose prose-invert rounded-2xl border border-border/30 bg-muted transition-colors hover:border-border",
-            shouldAnimate ? "animate-in-note" : "",
-            className
-         )}
-         {...props}
-      >
-         <div
-            className="p-5"
-            dangerouslySetInnerHTML={{
-               __html: note.content?.replaceAll("<p></p>", "") ?? "",
-            }}
-         />
-      </motion.div>
    )
 }

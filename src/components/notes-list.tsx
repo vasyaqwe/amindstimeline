@@ -1,11 +1,11 @@
 "use client"
 
-import { EditorOutput } from "@/components/ui/editor"
+import { type HTMLMotionProps, motion } from "framer-motion"
+import { type Row } from "@/types/supabase"
 import { Loading } from "@/components/ui/loading"
 import { NOTES_LIMIT, notesMutationKey, notesQueryKey } from "@/config"
 import { useIntersection } from "@/hooks/use-intersection"
 import { createClient } from "@/lib/supabase/client"
-import { type Row } from "@/types/supabase"
 import {
    type QueryStatus,
    useInfiniteQuery,
@@ -13,6 +13,7 @@ import {
 } from "@tanstack/react-query"
 import { AnimatePresence } from "framer-motion"
 import { useEffect } from "react"
+import { cn } from "@/lib/utils"
 
 type NotesListProps = {
    initialNotes: Row<"notes">[]
@@ -99,5 +100,50 @@ export function NotesList({ initialNotes }: NotesListProps) {
             aria-hidden={true}
          />
       </div>
+   )
+}
+
+const EditorOutput = ({
+   className,
+   note,
+   ...props
+}: HTMLMotionProps<"div"> & { note: Row<"notes"> }) => {
+   const shouldAnimate = note.id.startsWith("optimistic")
+
+   return (
+      <motion.div
+         initial={{
+            height: shouldAnimate ? 0 : "auto",
+            opacity: shouldAnimate ? 0 : 1,
+         }}
+         animate={{
+            opacity: 1,
+            height: "auto",
+            transition: {
+               type: "spring",
+               bounce: 0.4,
+               opacity: { delay: 0.1 },
+            },
+         }}
+         transition={{
+            duration: 1,
+            type: "spring",
+            bounce: 0,
+            opacity: { duration: 0.25 },
+         }}
+         className={cn(
+            "prose prose-invert rounded-2xl border border-border/30 bg-muted transition-colors hover:border-border",
+            shouldAnimate ? "animate-in-note" : "",
+            className
+         )}
+         {...props}
+      >
+         <div
+            className="p-5"
+            dangerouslySetInnerHTML={{
+               __html: note.content?.replaceAll("<p></p>", "") ?? "",
+            }}
+         />
+      </motion.div>
    )
 }

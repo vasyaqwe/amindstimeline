@@ -117,7 +117,7 @@
     border: 1px solid hsl(var(--accent) / .5);
   }
 
-  50% {
+  60% {
     background-color: hsl(var(--accent) / .1);
     border: 1px solid hsl(var(--accent) / .5);
   }
@@ -129,5 +129,5 @@
 }
 
 .animate-in-note {
-  animation: animate-in 2s ease-in-out;
+  animation: animate-in 4s ease-in-out;
 }
