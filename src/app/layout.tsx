@@ -2,6 +2,7 @@ import { GeistSans } from "geist/font"
 import { Carattere } from "next/font/google"
 import "@/styles/globals.css"
 import { TanstackProvider } from "@/components/tanstack-provider"
+import { Toaster } from "sonner"
 
 const defaultUrl = process.env.VERCEL_URL
    ? `https://${process.env.VERCEL_URL}`
@@ -31,6 +32,19 @@ export default function RootLayout({
       >
          <body className="bg-background font-primary text-foreground">
             <TanstackProvider>{children}</TanstackProvider>
+            <Toaster
+               theme="dark"
+               toastOptions={{
+                  style: {
+                     borderRadius: "100vmax",
+                     backgroundColor: "hsl(var(--muted))",
+                     color: "hsl(var(--foreground))",
+                     borderColor: "hsl(var(--border)/.8)",
+                  },
+               }}
+               position="bottom-center"
+               style={{ font: "inherit" }}
+            />
          </body>
       </html>
    )

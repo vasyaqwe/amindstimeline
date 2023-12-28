@@ -7,7 +7,7 @@
     --avatar-size: 30px;
 
     --background: 0 0% 6%;
-    --foreground: 0 0% 80%;
+    --foreground: 0 0% 87%;
 
     --popover: 240 5% 10%;
     --popover-foreground: 0 0% 80%;
@@ -84,12 +84,15 @@
 
 .prose>div>:only-child,
 .prose>div>:only-child {
-  margin: 0;
+  margin: 0 !important;
 }
 
-.prose p:last-child,
-.prose p:first-child {
-  margin: 0 !important;
+.prose>div>:first-child {
+  margin-top: 0 !important;
+}
+
+.prose>div>:last-child {
+  margin-bottom: 0 !important;
 }
 
 .prose p:empty {

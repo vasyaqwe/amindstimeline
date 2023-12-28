@@ -16,12 +16,10 @@ import { cn } from "@/lib/utils"
 import { Hint } from "@/components/hint"
 import {
    type ChangeEvent,
-   // type ClipboardEvent,
+   type ClipboardEvent,
    useState,
    useEffect,
    useRef,
-   type Dispatch,
-   type SetStateAction,
    type ComponentProps,
 } from "react"
 import { FileButton } from "@/components/ui/file-button"
@@ -42,24 +40,16 @@ import {
 import { type HTMLMotionProps, motion } from "framer-motion"
 import { type Row } from "@/types/supabase"
 import { Skeleton } from "@/components/ui/skeleton"
+import { createClient } from "@/lib/supabase/client"
+import { toast } from "sonner"
+import { flushSync } from "react-dom"
 
-type EditorProps<T extends boolean> = {
+type EditorProps = {
    value: string
    onChange: (value: string) => void
    className?: string
    isPending: boolean
-} & (T extends true
-   ? {
-        shouldSetImages: true
-        setImages: Dispatch<SetStateAction<string[]>>
-        setImagesToDeleteFromServer: Dispatch<SetStateAction<string[]>>
-     }
-   : {
-        shouldSetImages?: false
-        setImages?: Dispatch<SetStateAction<string[]>>
-        setImagesToDeleteFromServer?: Dispatch<SetStateAction<string[]>>
-     }) &
-   Omit<ComponentProps<"div">, "onChange">
+} & Omit<ComponentProps<"div">, "onChange">
 
 type Node = {
    attrs: Record<string, string>
@@ -79,19 +69,19 @@ const ShiftEnterCreateExtension = Extension.create({
    },
 })
 
-export const Editor = <T extends boolean>({
+export const Editor = ({
    value,
    onChange,
    className,
-   shouldSetImages = false,
-   setImages,
    onKeyDown,
    isPending,
-   setImagesToDeleteFromServer,
    ...props
-}: EditorProps<T>) => {
+}: EditorProps) => {
    const [isAnyTooltipVisible, setIsAnyTooltipVisible] = useState(false)
    const [isMounted, setIsMounted] = useState(false)
+   const [imagesToDeleteFromBucket, setImagesToDeleteFromBucket] = useState<
+      string[]
+   >([])
 
    const editor = useEditor({
       extensions: [
@@ -100,11 +90,12 @@ export const Editor = <T extends boolean>({
          ShiftEnterCreateExtension,
          Image.configure({
             HTMLAttributes: {
-               class: "rounded-md mb-5",
+               class: "rounded-md my-5",
             },
          }),
          Placeholder.configure({
             placeholder: "Anything on your mind...",
+            showOnlyWhenEditable: false,
          }),
       ],
       content: value,
@@ -137,7 +128,7 @@ export const Editor = <T extends boolean>({
    }, [isPending, editor])
 
    useEffect(() => {
-      if (!isMounted && editor && shouldSetImages) {
+      if (!isMounted && editor) {
          onImageNodesAddDelete({ editor })
          setIsMounted(true)
       }
@@ -145,8 +136,6 @@ export const Editor = <T extends boolean>({
    }, [editor, isMounted])
 
    const onImageNodesAddDelete = ({ editor }: { editor: CoreEditor }) => {
-      if (!shouldSetImages) return
-
       // Compare previous/current nodes to detect deleted ones
       const prevNodesById: Record<string, Node> = {}
       previousState.current?.doc.forEach((node: Node) => {
@@ -168,18 +157,16 @@ export const Editor = <T extends boolean>({
          const imageSrc = node.attrs.src ?? ""
          //return if no src
          if (imageSrc?.length < 1) return
+         const path = imageSrc?.split("/public/files/")?.[1] ?? ""
 
          if (nodesById[id] === undefined && node.type.name === "image") {
-            setImages?.((prev) => prev.filter((src) => src !== imageSrc))
-            setImagesToDeleteFromServer?.((prev) =>
-               prev.includes(imageSrc) ? prev : [...prev, imageSrc]
+            const path = imageSrc?.split("/public/files/")?.[1] ?? ""
+            setImagesToDeleteFromBucket?.((prev) =>
+               prev.includes(path) ? prev : [...prev, path]
             )
          } else {
-            setImagesToDeleteFromServer?.((prev) =>
-               prev.filter((src) => src !== imageSrc)
-            )
-            setImages?.((prev) =>
-               prev.includes(imageSrc) ? prev : [...prev, imageSrc]
+            setImagesToDeleteFromBucket?.((prev) =>
+               prev.filter((prevPath) => prevPath !== path)
             )
          }
       }
@@ -187,67 +174,82 @@ export const Editor = <T extends boolean>({
 
    if (!editor) return <Skeleton className="min-h-[176.5px] rounded-2xl" />
 
+   const supabase = createClient()
+
    async function onImageChange(e: ChangeEvent<HTMLInputElement>) {
       if (e.target.files?.[0]) {
-         // uploadImage(e.target.files[0])
+         uploadImage(e.target.files[0])
       }
    }
 
-   async function onImagePaste() {
-      //   e: ClipboardEvent<HTMLDivElement>
-      // if (isUploading) return
-      // if (e.clipboardData.files?.[0]) {
-      //    uploadImage(e.clipboardData.files[0])
-      // }
+   async function onImagePaste(e: ClipboardEvent<HTMLDivElement>) {
+      if (e.clipboardData.files?.[0]) {
+         uploadImage(e.clipboardData.files[0])
+      }
    }
 
-   // function uploadImage(file:File) {
-   //    const upload = async (files: File[]) => {
-   //       try {
-   //          const response = await startUpload(files)
-   //          if (!response) {
-   //             throw new Error("Error")
-   //          }
-   //          return response
-   //       } catch (error) {
-   //          throw error
-   //       }
-   //    }
-   //    editor?.setOptions({ editable: false })
-   //    toast.promise(upload([file]), {
-   //       loading: t("uploading"),
-   //       success: (uploadedImage) => {
-   //          if (uploadedImage?.[0]?.url) {
-   //             setImages?.((prev) => [...prev, uploadedImage[0]!.url])
-   //             editor
-   //                ?.chain()
-   //                .focus()
-   //                .setImage({ src: uploadedImage[0].url })
-   //                .run()
-   //          }
-   //          editor?.setOptions({ editable: true })
-   //          return t("uploaded")
-   //       },
-   //       error: t("upload-error"),
-   //    })
-   // }
+   function uploadImage(file: File) {
+      const upload = async () => {
+         try {
+            const { data, error } = await supabase.storage
+               .from("files")
+               .upload(`${file.name}`, file, { upsert: true })
+            if (error) {
+               throw new Error("Error")
+            }
+            return data
+         } catch (error) {
+            throw error
+         }
+      }
+      editor?.setOptions({ editable: false })
+
+      toast.promise(upload(), {
+         loading: "Uploading your image...",
+         success: (uploadedImage) => {
+            const src = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/files/${uploadedImage.path}`
+
+            if (uploadedImage.path) {
+               editor?.chain().focus().setImage({ src }).run()
+               editor?.setOptions({ editable: true })
+               editor?.chain().focus("end").run()
+               editor?.commands.createParagraphNear()
+               return "Image is uploaded"
+            }
+         },
+         error: () => {
+            editor?.setOptions({ editable: true })
+            editor?.chain().focus("end").run()
+            editor?.commands.createParagraphNear()
+
+            return "Failed to upload image, something went wrong"
+         },
+      })
+   }
+
+   async function removeImages() {
+      await supabase.storage.from("files").remove(imagesToDeleteFromBucket)
+   }
 
    return (
       <div
          className="rounded-2xl border border-border/60 bg-muted transition focus-within:border-border
           focus-within:outline-none hover:border-border"
          {...props}
-         onKeyDown={(e) => {
+         onKeyDown={async (e) => {
             if (
                e.key === "Enter" &&
                !e.shiftKey &&
                !e.ctrlKey &&
                editor.getText().length > 0 &&
                !editor.isActive("bulletList") &&
-               !editor.isActive("orderedList")
+               !editor.isActive("orderedList") &&
+               !isPending
             ) {
                onKeyDown?.(e)
                editor?.commands.clearContent()
+               await removeImages()
+               setImagesToDeleteFromBucket([])
             }
          }}
       >
@@ -486,7 +488,7 @@ export const EditorOutput = ({
          {...props}
       >
          <div
-            className="px-5 py-4"
+            className="p-5"
             dangerouslySetInnerHTML={{
                __html: note.content?.replaceAll("<p></p>", "") ?? "",
             }}

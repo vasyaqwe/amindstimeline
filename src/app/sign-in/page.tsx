@@ -53,7 +53,7 @@ export default async function Login({
          action={signIn}
       >
          <h1 className="mb-5 text-center font-accent text-6xl text-accent">
-            a minds timeline.
+            a mind's timeline
          </h1>
          <Button size={"lg"}>
             <svg

@@ -1,7 +1,7 @@
 "use client"
 
 import { EditorOutput } from "@/components/ui/editor"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Loading } from "@/components/ui/loading"
 import { NOTES_LIMIT, notesMutationKey, notesQueryKey } from "@/config"
 import { useIntersection } from "@/hooks/use-intersection"
 import { createClient } from "@/lib/supabase/client"
@@ -23,7 +23,7 @@ async function fetchNotes({ pageParam = 1 }) {
 
    const from = (pageParam - 1) * NOTES_LIMIT
    const to = from + NOTES_LIMIT - 1
-   await new Promise((resolve) => setTimeout(resolve, 400))
+   await new Promise((resolve) => setTimeout(resolve, 200))
 
    const { data, error } = await supabase
       .from("notes")
@@ -44,18 +44,23 @@ export function NotesList({ initialNotes }: NotesListProps) {
       select: (mutation) => mutation.state.status as never,
    })
 
-   const { fetchNextPage, hasNextPage, isFetchingNextPage, data } =
-      useInfiniteQuery({
-         queryKey: notesQueryKey,
-         queryFn: fetchNotes,
-         initialPageParam: 1,
-         refetchOnWindowFocus: false,
-         refetchOnReconnect: false,
-         getNextPageParam: (lastPage, allPages) => {
-            return lastPage?.length ? allPages.length + 1 : undefined
-         },
-         initialData: { pageParams: [1], pages: [initialNotes] },
-      })
+   const {
+      fetchNextPage,
+      hasNextPage,
+      isFetchedAfterMount,
+      isFetchingNextPage,
+      data,
+   } = useInfiniteQuery({
+      queryKey: notesQueryKey,
+      queryFn: fetchNotes,
+      initialPageParam: 1,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      getNextPageParam: (lastPage, allPages) => {
+         return lastPage?.length ? allPages.length + 1 : undefined
+      },
+      initialData: { pageParams: [1], pages: [initialNotes] },
+   })
 
    const notes = data.pages?.flat()
 
@@ -85,12 +90,9 @@ export function NotesList({ initialNotes }: NotesListProps) {
                Things to come...
             </h1>
          ) : null}
-         {isFetchingNextPage && notes.length > 1 && (
-            <>
-               <Skeleton className="min-h-[150px]" />
-               <Skeleton className="min-h-[120px]" />
-               <Skeleton className="min-h-[130px]" />
-            </>
+
+         {isFetchedAfterMount && isFetchingNextPage && notes.length > 1 && (
+            <Loading className="mx-auto mt-6" />
          )}
          <div
             ref={ref}

@@ -1,4 +1,4 @@
-export const NOTES_LIMIT = 5
+export const NOTES_LIMIT = 15
 
 export const notesQueryKey = ["notes"]
 
