@@ -219,7 +219,6 @@ export const Editor = ({
          error: () => {
             editor?.setOptions({ editable: true })
             editor?.chain().focus("end").run()
-            editor?.commands.createParagraphNear()
 
             return "Failed to upload image, something went wrong"
          },

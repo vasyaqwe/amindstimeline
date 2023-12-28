@@ -35,6 +35,9 @@ export default function RootLayout({
             <Toaster
                theme="dark"
                toastOptions={{
+                  classNames: {
+                     title: "!font-normal",
+                  },
                   style: {
                      borderRadius: "100vmax",
                      backgroundColor: "hsl(var(--muted))",

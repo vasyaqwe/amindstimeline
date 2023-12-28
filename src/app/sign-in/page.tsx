@@ -2,6 +2,8 @@ import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import logo from "@public/logo.png"
+import Image from "next/image"
 
 export default async function Login({
    searchParams,
@@ -53,6 +55,11 @@ export default async function Login({
          action={signIn}
       >
          <h1 className="mb-5 text-center font-accent text-6xl text-accent">
+            <Image
+               className="-mt-1 mr-1 inline max-w-[48px]"
+               src={logo}
+               alt="a mind's timeline"
+            />
             a mind's timeline
          </h1>
          <Button size={"lg"}>
