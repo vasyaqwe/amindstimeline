@@ -25,6 +25,7 @@
     "framer-motion": "^10.16.16",
     "geist": "^1.0.0",
     "lucide-react": "^0.302.0",
+    "nanoid": "^5.0.4",
     "next": "latest",
     "postcss": "8.4.29",
     "react": "18.2.0",

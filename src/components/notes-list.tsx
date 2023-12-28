@@ -121,12 +121,12 @@ const EditorOutput = ({
             height: "auto",
             transition: {
                type: "spring",
-               bounce: 0.4,
+               bounce: 0.3,
                opacity: { delay: 0.1 },
             },
          }}
          transition={{
-            duration: 1,
+            duration: 0.7,
             type: "spring",
             bounce: 0,
             opacity: { duration: 0.25 },

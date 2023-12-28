@@ -11,8 +11,8 @@ import Image from "@tiptap/extension-image"
 import Link from "@tiptap/extension-link"
 import Placeholder from "@tiptap/extension-placeholder"
 import { Toggle, toggleVariants } from "@/components/ui/toggle"
-
-import { cn } from "@/lib/utils"
+import { nanoid } from "nanoid"
+import { cn, extractFileNameFromStorageUrl } from "@/lib/utils"
 import { Hint } from "@/components/hint"
 import {
    type ChangeEvent,
@@ -42,7 +42,7 @@ import { toast } from "sonner"
 
 type EditorProps = {
    value: string
-   onChange: (value: string) => void
+   onChange: (html: string) => void
    className?: string
    isPending: boolean
 } & Omit<ComponentProps<"div">, "onChange">
@@ -97,7 +97,7 @@ export const Editor = ({
       content: value,
       editorProps: {
          attributes: {
-            id: "editor",
+            id: nanoid(),
             class: cn(
                "w-full py-3 px-4 min-h-[120px] focus:outline-none prose prose-invert",
                className
@@ -106,6 +106,7 @@ export const Editor = ({
       },
       onUpdate({ editor: _editor }) {
          const editor = _editor as CoreEditor
+
          onChange(editor.getHTML() === "<p></p>" ? "" : editor.getHTML())
          onImageNodesAddDelete({ editor })
       },
@@ -131,7 +132,7 @@ export const Editor = ({
       // eslint-disable-next-line react-hooks/exhaustive-deps
    }, [editor, isMounted])
 
-   const onImageNodesAddDelete = ({ editor }: { editor: CoreEditor }) => {
+   function onImageNodesAddDelete({ editor }: { editor: CoreEditor }) {
       // Compare previous/current nodes to detect deleted ones
       const prevNodesById: Record<string, Node> = {}
       previousState.current?.doc.forEach((node: Node) => {
@@ -153,16 +154,17 @@ export const Editor = ({
          const imageSrc = node.attrs.src ?? ""
          //return if no src
          if (imageSrc?.length < 1) return
-         const path = imageSrc?.split("/public/files/")?.[1] ?? ""
+
+         const fileName = extractFileNameFromStorageUrl(imageSrc)
+         if (!fileName) return
 
          if (nodesById[id] === undefined && node.type.name === "image") {
-            const path = imageSrc?.split("/public/files/")?.[1] ?? ""
             setImagesToDeleteFromBucket?.((prev) =>
-               prev.includes(path) ? prev : [...prev, path]
+               prev.includes(fileName) ? prev : [...prev, fileName]
             )
          } else {
             setImagesToDeleteFromBucket?.((prev) =>
-               prev.filter((prevPath) => prevPath !== path)
+               prev.filter((prevFileName) => prevFileName !== fileName)
             )
          }
       }
@@ -187,9 +189,13 @@ export const Editor = ({
    function uploadImage(file: File) {
       const upload = async () => {
          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const editorId = (editor?.options.editorProps.attributes as any).id
+
             const { data, error } = await supabase.storage
                .from("files")
-               .upload(`${file.name}`, file, { upsert: true })
+               .upload(`${editorId}-${file.name}`, file, { upsert: true })
+
             if (error) {
                throw new Error("Error")
             }
@@ -234,11 +240,17 @@ export const Editor = ({
           focus-within:outline-none hover:border-border"
          {...props}
          onKeyDown={async (e) => {
+            const isEmpty =
+               !editor.state.doc.textContent.trim().length &&
+               !editor.getJSON().content?.some((i) => i.type === "image")
+
+            if (isEmpty) return
+
             if (
                e.key === "Enter" &&
                !e.shiftKey &&
                !e.ctrlKey &&
-               editor.getText().length > 0 &&
+               !isEmpty &&
                !editor.isActive("bulletList") &&
                !editor.isActive("orderedList") &&
                !isPending
@@ -247,6 +259,15 @@ export const Editor = ({
                editor?.commands.clearContent()
                await removeImages()
                setImagesToDeleteFromBucket([])
+               editor.setOptions({
+                  editorProps: {
+                     attributes: {
+                        ...editor.options.editorProps.attributes,
+                        id: nanoid(),
+                     },
+                  },
+               })
+               previousState.current = undefined
             }
          }}
       >

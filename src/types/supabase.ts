@@ -1,3 +1,6 @@
+export type Row<T extends keyof Database["public"]["Tables"]> =
+   Database["public"]["Tables"][T]["Row"]
+
 export type Json =
    | string
    | number
@@ -45,9 +48,6 @@ export interface Database {
       }
    }
 }
-
-export type Row<T extends keyof Database["public"]["Tables"]> =
-   Database["public"]["Tables"][T]["Row"]
 
 export type Tables<
    PublicTableNameOrOptions extends
