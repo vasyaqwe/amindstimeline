@@ -42,7 +42,6 @@ import { type Row } from "@/types/supabase"
 import { Skeleton } from "@/components/ui/skeleton"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
-import { flushSync } from "react-dom"
 
 type EditorProps = {
    value: string
