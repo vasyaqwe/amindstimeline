@@ -185,7 +185,7 @@ export const Editor = <T extends boolean>({
       }
    }
 
-   if (!editor) return <Skeleton className="min-h-[176.5px]" />
+   if (!editor) return <Skeleton className="min-h-[176.5px] rounded-2xl" />
 
    async function onImageChange(e: ChangeEvent<HTMLInputElement>) {
       if (e.target.files?.[0]) {
@@ -267,7 +267,7 @@ export const Editor = <T extends boolean>({
                      editor.chain().focus().toggleHeading({ level: 1 }).run()
                   }
                >
-                  <Heading1 />
+                  <Heading1 className="opacity-80" />
                </Toggle>
             </Hint>
             <Hint
@@ -284,7 +284,7 @@ export const Editor = <T extends boolean>({
                      editor.chain().focus().toggleHeading({ level: 2 }).run()
                   }
                >
-                  <Heading2 />
+                  <Heading2 className="opacity-80" />
                </Toggle>
             </Hint>
             <Hint
@@ -303,7 +303,7 @@ export const Editor = <T extends boolean>({
                      editor.chain().focus().toggleBold().run()
                   }
                >
-                  <Bold />
+                  <Bold className="opacity-80" />
                </Toggle>
             </Hint>
             <Hint
@@ -322,7 +322,7 @@ export const Editor = <T extends boolean>({
                      editor.chain().focus().toggleItalic().run()
                   }
                >
-                  <Italic />
+                  <Italic className="opacity-80" />
                </Toggle>
             </Hint>
             <Hint
@@ -341,7 +341,7 @@ export const Editor = <T extends boolean>({
                      editor.chain().focus().toggleStrike().run()
                   }
                >
-                  <Strikethrough />
+                  <Strikethrough className="opacity-80" />
                </Toggle>
             </Hint>
             <Hint
@@ -360,7 +360,7 @@ export const Editor = <T extends boolean>({
                      editor.chain().focus().toggleOrderedList().run()
                   }
                >
-                  <ListOrdered />
+                  <ListOrdered className="opacity-80" />
                </Toggle>
             </Hint>
             <Hint
@@ -379,7 +379,7 @@ export const Editor = <T extends boolean>({
                      editor.chain().focus().toggleBulletList().run()
                   }
                >
-                  <List />
+                  <List className="opacity-80" />
                </Toggle>
             </Hint>
             <Hint
@@ -397,7 +397,7 @@ export const Editor = <T extends boolean>({
                   onChange={onImageChange}
                   accept="image/*"
                >
-                  <ImageIcon />
+                  <ImageIcon className="opacity-80" />
                </FileButton>
             </Hint>
             <Hint
@@ -417,7 +417,7 @@ export const Editor = <T extends boolean>({
                   )}
                   onClick={() => editor.chain().focus().undo().run()}
                >
-                  <Undo />
+                  <Undo className="opacity-80" />
                </button>
             </Hint>
             <Hint
@@ -437,7 +437,7 @@ export const Editor = <T extends boolean>({
                   )}
                   onClick={() => editor.chain().focus().redo().run()}
                >
-                  <Redo />
+                  <Redo className="opacity-80" />
                </button>
             </Hint>
          </div>
@@ -488,7 +488,7 @@ export const EditorOutput = ({
          <div
             className="px-5 py-4"
             dangerouslySetInnerHTML={{
-               __html: note.content?.slice(0, -7) ?? "",
+               __html: note.content?.replaceAll("<p></p>", "") ?? "",
             }}
          />
       </motion.div>

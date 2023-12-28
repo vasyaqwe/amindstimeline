@@ -20,7 +20,7 @@ export async function Header() {
    // }
 
    return (
-      <header className="container flex items-center justify-between p-10 text-accent">
+      <header className="container flex items-center justify-between p-5 text-accent md:p-10">
          <p className="font-accent text-3xl">a mind's timeline</p>{" "}
          {/* <form action={signOut}>
             <button className="bg-btn-background hover:bg-btn-background-hover rounded-md px-4 py-2 no-underline">

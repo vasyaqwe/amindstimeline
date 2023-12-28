@@ -7,10 +7,10 @@
     --avatar-size: 30px;
 
     --background: 0 0% 6%;
-    --foreground: 0 0% 94%;
+    --foreground: 0 0% 80%;
 
     --popover: 240 5% 10%;
-    --popover-foreground: 210 40% 98%;
+    --popover-foreground: 0 0% 80%;
 
     --primary: 240 5% 11%;
     --primary-foreground: 0 0% 94%;
@@ -19,9 +19,9 @@
     --secondary-foreground: 0 0% 98%;
 
     --muted: 240 2% 8%;
-    --muted-foreground: 240 2% 35%;
+    --muted-foreground: 240 2% 27%;
 
-    --accent: 37 100% 80%;
+    --accent: 30 100% 80%;
     --accent-2: 25 92% 51%;
     --accent-foreground: 0 0% 7%;
 
@@ -61,6 +61,10 @@
   border-top: 1px solid hsl(var(--foreground)) !important;
 }
 
+.prose * {
+  color: hsl(var(--foreground)) !important;
+}
+
 .prose img {
   border-radius: .75rem;
 }
@@ -76,6 +80,11 @@
 
 .prose li p {
   margin-block: .25em;
+}
+
+.prose>div>:only-child,
+.prose>div>:only-child {
+  margin: 0;
 }
 
 .prose p:last-child,

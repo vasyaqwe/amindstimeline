@@ -70,7 +70,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
    }, [entry, hasNextPage, fetchNextPage])
 
    return (
-      <div className="flex flex-col gap-4 border-t border-border/60 pt-7">
+      <div className="flex flex-col gap-4 border-t border-border/40 pt-7">
          {notes.length > 0 ? (
             <AnimatePresence mode="wait">
                {notes?.map((note) => (
