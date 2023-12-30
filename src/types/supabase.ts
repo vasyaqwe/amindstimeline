@@ -1,6 +1,8 @@
 export type Row<T extends keyof Database["public"]["Tables"]> =
    Database["public"]["Tables"][T]["Row"]
 
+export type Note = Row<"notes">
+
 export type Json =
    | string
    | number

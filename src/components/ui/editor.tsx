@@ -12,7 +12,7 @@ import Link from "@tiptap/extension-link"
 import Placeholder from "@tiptap/extension-placeholder"
 import { Toggle, toggleVariants } from "@/components/ui/toggle"
 import { nanoid } from "nanoid"
-import { cn, extractFileNameFromStorageUrl } from "@/lib/utils"
+import { cn, getFileNameFromStorageUrl } from "@/lib/utils"
 import { Hint } from "@/components/hint"
 import {
    type ChangeEvent,
@@ -45,14 +45,8 @@ type EditorProps = {
    onChange: (html: string) => void
    className?: string
    isPending: boolean
-} & Omit<ComponentProps<"div">, "onChange">
-
-type Node = {
-   attrs: Record<string, string>
-   type: {
-      name: string
-   }
-}
+   onSubmit: () => void
+} & Omit<ComponentProps<"form">, "onChange">
 
 const ShiftEnterCreateExtension = Extension.create({
    addKeyboardShortcuts() {
@@ -69,8 +63,8 @@ export const Editor = ({
    value,
    onChange,
    className,
-   onKeyDown,
    isPending,
+   onSubmit,
    ...props
 }: EditorProps) => {
    const [isAnyTooltipVisible, setIsAnyTooltipVisible] = useState(false)
@@ -78,6 +72,7 @@ export const Editor = ({
    const [imagesToDeleteFromBucket, setImagesToDeleteFromBucket] = useState<
       string[]
    >([])
+   const formRef = useRef<HTMLFormElement>(null)
 
    const editor = useEditor({
       extensions: [
@@ -112,7 +107,7 @@ export const Editor = ({
       },
    })
    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   const previousState = useRef<any>()
+   const previousImages = useRef<HTMLImageElement[]>([])
 
    useEffect(() => {
       if (!editor) return
@@ -133,32 +128,37 @@ export const Editor = ({
    }, [editor, isMounted])
 
    function onImageNodesAddDelete({ editor }: { editor: CoreEditor }) {
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(editor.getHTML(), "text/html")
+
+      // Get all img elements in the document
+      const images = [...doc.querySelectorAll("img")]
+
       // Compare previous/current nodes to detect deleted ones
-      const prevNodesById: Record<string, Node> = {}
-      previousState.current?.doc.forEach((node: Node) => {
-         if (node.attrs.src) {
-            prevNodesById[node.attrs.src] = node
+      const prevNodesById: Record<string, HTMLImageElement> = {}
+      previousImages.current.forEach((node: HTMLImageElement) => {
+         if (node.src) {
+            prevNodesById[node.src] = node
          }
       })
 
-      const nodesById: Record<string, Node> = {}
-      editor.state.doc.forEach((node) => {
-         if (node.attrs.src) {
-            nodesById[node.attrs.src] = node
+      const nodesById: Record<string, HTMLImageElement> = {}
+      images.forEach((node) => {
+         if (node.src) {
+            nodesById[node.src] = node
          }
       })
 
-      previousState.current = editor.state
+      previousImages.current = images
 
       for (const [id, node] of Object.entries(prevNodesById)) {
-         const imageSrc = node.attrs.src ?? ""
-         //return if no src
-         if (imageSrc?.length < 1) return
+         const imageUrl = node.src
+         if (!imageUrl) return
 
-         const fileName = extractFileNameFromStorageUrl(imageSrc)
+         const fileName = getFileNameFromStorageUrl(imageUrl)
          if (!fileName) return
 
-         if (nodesById[id] === undefined && node.type.name === "image") {
+         if (nodesById[id] === undefined) {
             setImagesToDeleteFromBucket?.((prev) =>
                prev.includes(fileName) ? prev : [...prev, fileName]
             )
@@ -235,7 +235,8 @@ export const Editor = ({
    }
 
    return (
-      <div
+      <form
+         ref={formRef}
          className="rounded-2xl border border-border/60 bg-muted transition focus-within:border-border
           focus-within:outline-none hover:border-border"
          {...props}
@@ -244,7 +245,7 @@ export const Editor = ({
                !editor.state.doc.textContent.trim().length &&
                !editor.getJSON().content?.some((i) => i.type === "image")
 
-            if (isEmpty) return
+            if (isEmpty || isPending) return
 
             if (
                e.key === "Enter" &&
@@ -255,20 +256,24 @@ export const Editor = ({
                !editor.isActive("orderedList") &&
                !isPending
             ) {
-               onKeyDown?.(e)
-               editor?.commands.clearContent()
-               await removeImages()
-               setImagesToDeleteFromBucket([])
-               editor.setOptions({
-                  editorProps: {
-                     attributes: {
-                        ...editor.options.editorProps.attributes,
-                        id: nanoid(),
-                     },
-                  },
-               })
-               previousState.current = undefined
+               formRef.current?.requestSubmit()
             }
+         }}
+         onSubmit={async (e) => {
+            e.preventDefault()
+            onSubmit()
+            editor?.commands.clearContent()
+            await removeImages()
+            setImagesToDeleteFromBucket([])
+            editor.setOptions({
+               editorProps: {
+                  attributes: {
+                     ...editor.options.editorProps.attributes,
+                     id: nanoid(),
+                  },
+               },
+            })
+            previousImages.current = []
          }}
       >
          <div className="scroll-x flex overflow-x-auto border-b-2 border-dotted border-input p-2">
@@ -465,6 +470,6 @@ export const Editor = ({
             onPaste={onImagePaste}
             editor={editor}
          />
-      </div>
+      </form>
    )
 }

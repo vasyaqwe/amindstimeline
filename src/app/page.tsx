@@ -5,7 +5,7 @@ import { redirect } from "next/navigation"
 import { CreateNoteForm } from "@/components/forms/create-note-form"
 import { NOTES_LIMIT } from "@/config"
 import { NotesList } from "@/components/notes-list"
-import { type Row } from "@/types/supabase"
+import { type Note } from "@/types/supabase"
 
 export default async function Index() {
    const cookieStore = cookies()
@@ -26,9 +26,9 @@ export default async function Index() {
    return (
       <>
          <Header />
-         <main className="mx-auto max-w-2xl px-5 pb-20 pt-7">
+         <main className="mx-auto max-w-3xl px-5 pb-20 pt-7">
             <CreateNoteForm />
-            <NotesList initialNotes={notes as Row<"notes">[]} />
+            <NotesList initialNotes={notes as Note[]} />
          </main>
       </>
    )

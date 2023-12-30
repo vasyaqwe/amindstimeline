@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 "use client"
 
-import { type HTMLMotionProps, motion } from "framer-motion"
-import { type Row } from "@/types/supabase"
+import { motion } from "framer-motion"
+import { type Note } from "@/types/supabase"
 import { Loading } from "@/components/ui/loading"
 import { NOTES_LIMIT, notesMutationKey, notesQueryKey } from "@/config"
 import { useIntersection } from "@/hooks/use-intersection"
@@ -10,13 +11,17 @@ import {
    type QueryStatus,
    useInfiniteQuery,
    useMutationState,
+   useMutation,
 } from "@tanstack/react-query"
 import { AnimatePresence } from "framer-motion"
-import { useEffect } from "react"
-import { cn } from "@/lib/utils"
+import { type Dispatch, type SetStateAction, useEffect, useState } from "react"
+import { cn, getFileNamesFromHTML } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { TrashIcon } from "@heroicons/react/20/solid"
+import { toast } from "sonner"
 
 type NotesListProps = {
-   initialNotes: Row<"notes">[]
+   initialNotes: Note[]
 }
 
 async function fetchNotes({ pageParam = 1 }) {
@@ -44,6 +49,25 @@ export function NotesList({ initialNotes }: NotesListProps) {
       filters: { mutationKey: notesMutationKey, status: "pending" },
       select: (mutation) => mutation.state.status as never,
    })
+   const createdNotes = useMutationState<Note & { optimisticId: string }>({
+      filters: { mutationKey: notesMutationKey, status: "success" },
+      select: (mutation) =>
+         mutation.state.data as Note & { optimisticId: string },
+   })
+
+   const [deletedIds, setDeletedIds] = useState<string[]>([])
+   const [optimisticNotesIdsMap, setOptimisticNotesIdsMap] = useState<
+      Record<string, string>
+   >({})
+
+   useEffect(() => {
+      setOptimisticNotesIdsMap(() =>
+         createdNotes.reduce((acc: Record<string, string>, curr) => {
+            acc[curr.optimisticId] = curr.id
+            return acc
+         }, {})
+      )
+   }, [createdNotes])
 
    const {
       fetchNextPage,
@@ -63,7 +87,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
       initialData: { pageParams: [1], pages: [initialNotes] },
    })
 
-   const notes = data.pages?.flat()
+   const notes = data.pages?.flat().filter((n) => !deletedIds.includes(n.id))
 
    const { ref, entry } = useIntersection({
       threshold: 0,
@@ -76,21 +100,50 @@ export function NotesList({ initialNotes }: NotesListProps) {
    }, [entry, hasNextPage, fetchNextPage])
 
    return (
-      <div className="flex flex-col gap-4 border-t border-border/40 pt-7">
-         {notes.length > 0 ? (
-            <AnimatePresence mode="wait">
-               {notes?.map((note) => (
-                  <EditorOutput
-                     note={note}
-                     key={note?.id}
-                  />
-               ))}
-            </AnimatePresence>
-         ) : variables.length < 1 ? (
-            <h1 className="mt-5 text-center font-accent text-5xl">
-               Things to come...
-            </h1>
-         ) : null}
+      <div className="pt-3">
+         <AnimatePresence initial={false}>
+            {notes.length > 0 ? (
+               notes?.map((note) => (
+                  <motion.div
+                     key={note.id}
+                     exit={{
+                        height: 0,
+                        opacity: 0,
+                     }}
+                     initial={{
+                        height: 0,
+                        opacity: 0,
+                     }}
+                     animate={{
+                        opacity: 1,
+                        height: "auto",
+                        transition: {
+                           type: "spring",
+                           bounce: 0.3,
+                           opacity: { delay: 0.1 },
+                        },
+                     }}
+                     transition={{
+                        duration: 0.7,
+                        type: "spring",
+                        bounce: 0,
+                        opacity: { duration: 0.25 },
+                     }}
+                     className="group relative px-12"
+                  >
+                     <EditorOutput
+                        note={note}
+                        optimisticNotesIdsMap={optimisticNotesIdsMap}
+                        setDeletedIds={setDeletedIds}
+                     />
+                  </motion.div>
+               ))
+            ) : variables.length < 1 ? (
+               <h1 className="mt-5 text-center font-accent text-5xl">
+                  Things to come...
+               </h1>
+            ) : null}
+         </AnimatePresence>
 
          {isFetchedAfterMount && isFetchingNextPage && notes.length > 1 && (
             <Loading className="mx-auto mt-6" />
@@ -103,47 +156,91 @@ export function NotesList({ initialNotes }: NotesListProps) {
    )
 }
 
+type EditorOutputProps = {
+   note: Note
+   setDeletedIds: Dispatch<SetStateAction<string[]>>
+   optimisticNotesIdsMap: Record<string, string>
+}
+
 const EditorOutput = ({
-   className,
    note,
-   ...props
-}: HTMLMotionProps<"div"> & { note: Row<"notes"> }) => {
-   const shouldAnimate = note.id.startsWith("optimistic")
+   setDeletedIds,
+   optimisticNotesIdsMap,
+}: EditorOutputProps) => {
+   const isOptimistic = note.id.startsWith("optimistic")
+   const supabase = createClient()
+
+   const { mutate: onDelete, isPending: isDeletePending } = useMutation({
+      mutationKey: ["notes", note.id, "delete"],
+      mutationFn: async ({ id }: { id: string }) => {
+         const { data, error } = await supabase
+            .from("notes")
+            .delete()
+            .eq("id", id)
+            .select("*")
+
+         if (error) {
+            throw error
+         } else {
+            return data[0]
+         }
+      },
+      onSuccess: async (deletedNote) => {
+         toast.success("Note deleted")
+         setDeletedIds((prev) => [...prev, note.id])
+
+         if (deletedNote) {
+            const filesToDelete = getFileNamesFromHTML(
+               deletedNote.content
+            ).filter(Boolean)
+            if (filesToDelete.length > 0) {
+               await supabase.storage.from("files").remove(filesToDelete)
+            }
+         }
+      },
+      onError: () => {
+         toast.error("Failed to delete note, something went wrong")
+      },
+   })
+
+   const realNoteId = optimisticNotesIdsMap[note.id]
 
    return (
-      <motion.div
-         initial={{
-            height: shouldAnimate ? 0 : "auto",
-            opacity: shouldAnimate ? 0 : 1,
-         }}
-         animate={{
-            opacity: 1,
-            height: "auto",
-            transition: {
-               type: "spring",
-               bounce: 0.3,
-               opacity: { delay: 0.1 },
-            },
-         }}
-         transition={{
-            duration: 0.7,
-            type: "spring",
-            bounce: 0,
-            opacity: { duration: 0.25 },
-         }}
-         className={cn(
-            "prose prose-invert rounded-2xl border border-border/30 bg-muted transition-colors hover:border-border",
-            shouldAnimate ? "animate-in-note" : "",
-            className
+      <>
+         {(realNoteId || !isOptimistic) && (
+            <div
+               className={`absolute left-[calc(100%-48px)] z-[1] mt-4 -translate-x-10 scale-75 opacity-0 transition
+                duration-300 group-hover:translate-x-4 group-hover:scale-100 group-hover:opacity-100`}
+            >
+               <Button
+                  disabled={isDeletePending}
+                  size={"icon"}
+                  className="text-foreground/60 hover:border-destructive/25 hover:text-destructive/70"
+                  onClick={() =>
+                     onDelete({
+                        id: isOptimistic && realNoteId ? realNoteId : note.id,
+                     })
+                  }
+               >
+                  {isDeletePending ? (
+                     <Loading />
+                  ) : (
+                     <TrashIcon className="size-6 fill-current" />
+                  )}
+               </Button>
+            </div>
          )}
-         {...props}
-      >
-         <div
-            className="p-5"
-            dangerouslySetInnerHTML={{
-               __html: note.content?.replaceAll("<p></p>", "") ?? "",
-            }}
-         />
-      </motion.div>
+         <div className="relative z-[2] overflow-hidden [&>div]:mt-4">
+            <div
+               className={cn(
+                  "group prose prose-invert rounded-2xl border border-border/30 bg-muted p-5 transition-colors hover:border-border",
+                  isOptimistic ? "animate-in-note" : ""
+               )}
+               dangerouslySetInnerHTML={{
+                  __html: note.content?.replaceAll("<p></p>", "") ?? "",
+               }}
+            />
+         </div>
+      </>
    )
 }

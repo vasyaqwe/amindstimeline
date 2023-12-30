@@ -22,10 +22,10 @@ export async function Header() {
    // }
 
    return (
-      <header className="container flex items-center justify-between p-5 text-accent md:p-10">
-         <p className="font-accent text-3xl">
+      <header className="container flex items-center justify-between gap-6 p-5 text-3xl text-accent md:p-10">
+         <p className="flex-shrink-0 font-accent">
             <Image
-               className="-mt-1 mr-1 inline max-w-[32px]"
+               className="-mt-1 mr-1 inline max-w-[26px] sm:max-w-[32px]"
                src={logo}
                alt="a mind's timeline"
             />
@@ -36,9 +36,11 @@ export async function Header() {
                Logout
             </button>
          </form> */}
-         <p className="flex items-center gap-3 font-accent text-3xl">
+         <p className="flex items-center gap-3 font-accent">
             <Avatar />
-            {user?.user_metadata.full_name}
+            <span className="line-clamp-1 break-all pr-1">
+               {user?.user_metadata.full_name}
+            </span>
          </p>
       </header>
    )
