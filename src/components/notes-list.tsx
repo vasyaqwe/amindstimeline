@@ -12,13 +12,28 @@ import {
    useInfiniteQuery,
    useMutationState,
    useMutation,
+   useQueryClient,
 } from "@tanstack/react-query"
 import { AnimatePresence } from "framer-motion"
-import { type Dispatch, type SetStateAction, useEffect, useState } from "react"
+import {
+   type Dispatch,
+   type SetStateAction,
+   useEffect,
+   useState,
+   useRef,
+} from "react"
 import { cn, getFileNamesFromHTML } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { TrashIcon } from "@heroicons/react/20/solid"
+import {
+   CheckIcon,
+   PencilIcon,
+   TrashIcon,
+   XMarkIcon,
+} from "@heroicons/react/20/solid"
 import { toast } from "sonner"
+import { Editor } from "@/components/ui/editor"
+import { useEventListener } from "@/hooks/use-event-listener"
+import { useEditor } from "@/hooks/use-editor"
 
 type NotesListProps = {
    initialNotes: Note[]
@@ -129,7 +144,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
                         bounce: 0,
                         opacity: { duration: 0.25 },
                      }}
-                     className="group relative px-12"
+                     className="group relative lg:px-12"
                   >
                      <EditorOutput
                         note={note}
@@ -167,8 +182,17 @@ const EditorOutput = ({
    setDeletedIds,
    optimisticNotesIdsMap,
 }: EditorOutputProps) => {
-   const isOptimistic = note.id.startsWith("optimistic")
    const supabase = createClient()
+   const queryClient = useQueryClient()
+   const [shouldAnimate, setShouldAnimate] = useState(
+      note.id.startsWith("optimistic")
+   )
+   const [isEditing, setIsEditing] = useState(false)
+   const [content, setContent] = useState(note.content ?? "")
+
+   const wrapperRef = useRef<HTMLDivElement>(null)
+
+   const isOptimistic = note.id.startsWith("optimistic")
 
    const { mutate: onDelete, isPending: isDeletePending } = useMutation({
       mutationKey: ["notes", note.id, "delete"],
@@ -203,43 +227,149 @@ const EditorOutput = ({
       },
    })
 
+   const { mutate: onUpdate, isPending: isUpdatePending } = useMutation({
+      mutationKey: ["notes", note.id, "edit"],
+      mutationFn: async () => {
+         const { data, error } = await supabase
+            .from("notes")
+            .update({ content })
+            .eq("id", note.id)
+            .select("*")
+
+         if (error) {
+            throw error
+         } else {
+            return data[0]
+         }
+      },
+      onSuccess: async (updatedNote) => {
+         void queryClient.invalidateQueries({ queryKey: notesQueryKey })
+         toast.success("Note updated")
+         onCancelEditing()
+         await resetEditor()
+         editor?.commands.setContent(updatedNote?.content ?? "")
+         setContent(updatedNote?.content ?? "")
+      },
+      onError: () => {
+         toast.error("Failed to update note, something went wrong")
+      },
+   })
+
+   const { editor, onImagePaste, onImageChange, resetEditor } = useEditor({
+      isPending: isUpdatePending,
+      onChange: (value) => setContent(value),
+      value: content,
+      shouldInitNewEditorOnReset: false,
+   })
+
+   function onCancelEditing() {
+      editor?.commands.setContent(note.content)
+      setIsEditing(false)
+      setContent(note.content ?? "")
+   }
+
+   useEventListener("keydown", (e) => {
+      if (e.key === "Escape") onCancelEditing()
+   })
+
    const realNoteId = optimisticNotesIdsMap[note.id]
 
    return (
       <>
          {(realNoteId || !isOptimistic) && (
             <div
-               className={`absolute left-[calc(100%-48px)] z-[1] mt-4 -translate-x-10 scale-75 opacity-0 transition
-                duration-300 group-hover:translate-x-4 group-hover:scale-100 group-hover:opacity-100`}
+               data-visible={isEditing}
+               className={`absolute z-[1] mt-4 flex scale-75 opacity-0 transition duration-300 group-hover:scale-100
+                group-hover:opacity-100 data-[visible=true]:scale-100 data-[visible=true]:opacity-100
+                max-lg:right-0 max-lg:translate-y-10 max-lg:group-hover:-translate-y-12 
+                max-lg:data-[visible=true]:-translate-y-12
+                lg:left-[calc(100%-48px)]
+                lg:-translate-x-10
+                lg:group-hover:translate-x-4 lg:data-[visible=true]:translate-x-4`}
             >
-               <Button
-                  disabled={isDeletePending}
-                  size={"icon"}
-                  className="text-foreground/60 hover:border-destructive/25 hover:text-destructive/70"
-                  onClick={() =>
-                     onDelete({
-                        id: isOptimistic && realNoteId ? realNoteId : note.id,
-                     })
-                  }
-               >
-                  {isDeletePending ? (
-                     <Loading />
-                  ) : (
-                     <TrashIcon className="size-6 fill-current" />
-                  )}
-               </Button>
+               {isEditing ? (
+                  <Button
+                     disabled={isDeletePending}
+                     size={"icon"}
+                     className="rounded-r-none border-r-transparent text-foreground/60 hover:border"
+                     onClick={onCancelEditing}
+                  >
+                     <XMarkIcon className="size-7 fill-current" />
+                  </Button>
+               ) : (
+                  <Button
+                     size={"icon"}
+                     className="rounded-r-none border-r-transparent text-foreground/60 hover:border"
+                     onClick={() => {
+                        setShouldAnimate(false)
+                        setIsEditing(true)
+
+                        if (editor) editor.commands.focus("end")
+                     }}
+                  >
+                     <PencilIcon className="size-5 fill-current" />
+                  </Button>
+               )}
+
+               {isEditing ? (
+                  <Button
+                     disabled={isUpdatePending}
+                     size={"icon"}
+                     className="rounded-l-none border-l-transparent text-foreground/60 hover:border-[#16a34a]/25 hover:text-[#16a34a]/60"
+                     onClick={() => onUpdate()}
+                  >
+                     {isUpdatePending ? (
+                        <Loading />
+                     ) : (
+                        <CheckIcon className="size-6 fill-current" />
+                     )}
+                  </Button>
+               ) : (
+                  <Button
+                     disabled={isDeletePending}
+                     size={"icon"}
+                     className="rounded-l-none border-l-transparent text-foreground/60 hover:border-destructive/25 hover:text-destructive/60"
+                     onClick={() =>
+                        onDelete({
+                           id:
+                              isOptimistic && realNoteId ? realNoteId : note.id,
+                        })
+                     }
+                  >
+                     {isDeletePending ? (
+                        <Loading />
+                     ) : (
+                        <TrashIcon className="size-5 fill-current" />
+                     )}
+                  </Button>
+               )}
             </div>
          )}
-         <div className="relative z-[2] overflow-hidden [&>div]:mt-4">
-            <div
-               className={cn(
-                  "group prose prose-invert rounded-2xl border border-border/30 bg-muted p-5 transition-colors hover:border-border",
-                  isOptimistic ? "animate-in-note" : ""
-               )}
-               dangerouslySetInnerHTML={{
-                  __html: note.content?.replaceAll("<p></p>", "") ?? "",
-               }}
-            />
+         <div
+            className="relative z-[2] overflow-hidden [&>*]:mt-4"
+            ref={wrapperRef}
+         >
+            {isEditing ? (
+               <Editor
+                  onSubmit={() => {
+                     onUpdate()
+                  }}
+                  editor={editor}
+                  isPending={isUpdatePending}
+                  onImageChange={onImageChange}
+                  onImagePaste={onImagePaste}
+               />
+            ) : (
+               <div
+                  className={cn(
+                     "group prose prose-invert max-w-full rounded-2xl border border-border/30 bg-muted p-5 transition-colors hover:border-border",
+                     shouldAnimate ? "animate-in-note" : ""
+                  )}
+                  dangerouslySetInnerHTML={{
+                     __html: content?.replaceAll("<p></p>", "") ?? "",
+                  }}
+               />
+            )}
          </div>
       </>
    )

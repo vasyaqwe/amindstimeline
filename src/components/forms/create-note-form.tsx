@@ -2,6 +2,7 @@
 
 import { Editor } from "@/components/ui/editor"
 import { notesMutationKey, notesQueryKey } from "@/config"
+import { useEditor } from "@/hooks/use-editor"
 import { createClient } from "@/lib/supabase/client"
 import { type Note } from "@/types/supabase"
 import {
@@ -32,9 +33,10 @@ export function CreateNoteForm() {
             return { ...data, optimisticId: id }
          }
       },
-      onSuccess: () => {
+      onSuccess: async () => {
          toast.success("Note created")
          setContent("")
+         await resetEditor()
       },
       onMutate: async ({ content, id }) => {
          await queryClient.cancelQueries({ queryKey: notesQueryKey })
@@ -60,6 +62,7 @@ export function CreateNoteForm() {
             ),
          })
 
+         editor?.commands.clearContent()
          return { previousNotes }
       },
       onError: (_err, _newTodo, context) => {
@@ -75,15 +78,22 @@ export function CreateNoteForm() {
       // },
    })
 
+   const { editor, onImagePaste, onImageChange, resetEditor } = useEditor({
+      isPending,
+      onChange: (value) => setContent(value),
+      value: content,
+   })
+
    return (
-      <div className="mx-12 border-b border-border/60 pb-6">
+      <div className="border-b border-border/60 pb-6 lg:mx-12">
          <Editor
+            editor={editor}
+            isPending={isPending}
+            onImageChange={onImageChange}
+            onImagePaste={onImagePaste}
             onSubmit={() => {
                mutate({ content, id: `optimistic-${Date.now()}` })
             }}
-            isPending={isPending}
-            value={content}
-            onChange={(value) => setContent(value)}
          />
       </div>
    )

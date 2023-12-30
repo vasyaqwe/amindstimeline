@@ -22,7 +22,7 @@ export async function Header() {
    // }
 
    return (
-      <header className="container flex items-center justify-between gap-6 p-5 text-3xl text-accent md:p-10">
+      <header className="container flex items-center justify-between gap-6 p-5 text-3xl text-accent md:py-10 lg:px-10">
          <p className="flex-shrink-0 font-accent">
             <Image
                className="-mt-1 mr-1 inline max-w-[26px] sm:max-w-[32px]"

@@ -82,21 +82,17 @@
   margin-block: .25em;
 }
 
-.prose>div>:only-child,
-.prose>div>:only-child {
+.prose>:only-child,
+.prose>:only-child {
   margin: 0 !important;
 }
 
-.prose>div>:first-child {
+.prose>:first-child {
   margin-top: 0 !important;
 }
 
-.prose>div>:last-child {
+.prose>:last-child {
   margin-bottom: 0 !important;
-}
-
-.prose p:empty {
-  display: none;
 }
 
 .prose a:hover {
