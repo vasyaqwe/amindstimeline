@@ -14,6 +14,7 @@ import {
 import { FileButton } from "@/components/ui/file-button"
 import {
    Bold,
+   Code2,
    Heading1,
    Heading2,
    ImageIcon,
@@ -21,6 +22,7 @@ import {
    List,
    ListOrdered,
    Redo,
+   SquareCode,
    Strikethrough,
    Undo,
 } from "lucide-react"
@@ -42,18 +44,39 @@ export const Editor = ({
    onImageChange,
    editor,
    isPending,
+   children,
    ...props
 }: EditorProps) => {
    const [isAnyTooltipVisible, setIsAnyTooltipVisible] = useState(false)
 
    const formRef = useRef<HTMLFormElement>(null)
 
-   if (!editor) return <Skeleton className="min-h-[176.5px] rounded-2xl" />
+   if (!editor)
+      return (
+         <Skeleton className="min-h-[190.5px] rounded-2xl md:min-h-[210.5px]" />
+      )
+
+   function isMobile() {
+      if (typeof window === "undefined") return false
+
+      // Check for touch screen capability
+      const hasTouchScreen =
+         "ontouchstart" in window || navigator.maxTouchPoints > 0
+
+      // Check the user agent string
+      const userAgent = navigator.userAgent.toLowerCase()
+      const isMobileUserAgent =
+         /mobile|android|touch|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(
+            userAgent
+         )
+
+      return hasTouchScreen && isMobileUserAgent
+   }
 
    return (
       <form
          ref={formRef}
-         className="rounded-2xl border border-border/60 bg-muted transition focus-within:border-border
+         className="flex flex-col rounded-2xl border border-border/60 bg-muted transition focus-within:border-border
           focus-within:outline-none hover:border-border"
          {...props}
          onKeyDown={async (e) => {
@@ -61,7 +84,7 @@ export const Editor = ({
                !editor.state.doc.textContent.trim().length &&
                !editor.getJSON().content?.some((i) => i.type === "image")
 
-            if (isEmpty || isPending) return
+            if (isEmpty || isPending || isMobile()) return
 
             if (
                e.key === "Enter" &&
@@ -80,7 +103,7 @@ export const Editor = ({
             onSubmit()
          }}
       >
-         <div className="scroll-x flex overflow-x-auto border-b-2 border-dotted border-input p-2">
+         <div className="scroll-x flex overflow-x-auto p-2 pb-1">
             <Hint
                delayDuration={isAnyTooltipVisible ? 0 : 350}
                onMouseOver={() => setIsAnyTooltipVisible(true)}
@@ -96,7 +119,7 @@ export const Editor = ({
                      editor.chain().focus().toggleHeading({ level: 1 }).run()
                   }
                >
-                  <Heading1 className="opacity-80" />
+                  <Heading1 className="opacity-60" />
                </Toggle>
             </Hint>
             <Hint
@@ -113,7 +136,7 @@ export const Editor = ({
                      editor.chain().focus().toggleHeading({ level: 2 }).run()
                   }
                >
-                  <Heading2 className="opacity-80" />
+                  <Heading2 className="opacity-60" />
                </Toggle>
             </Hint>
             <Hint
@@ -132,7 +155,7 @@ export const Editor = ({
                      editor.chain().focus().toggleBold().run()
                   }
                >
-                  <Bold className="opacity-80" />
+                  <Bold className="opacity-60" />
                </Toggle>
             </Hint>
             <Hint
@@ -151,7 +174,7 @@ export const Editor = ({
                      editor.chain().focus().toggleItalic().run()
                   }
                >
-                  <Italic className="opacity-80" />
+                  <Italic className="opacity-60" />
                </Toggle>
             </Hint>
             <Hint
@@ -170,7 +193,7 @@ export const Editor = ({
                      editor.chain().focus().toggleStrike().run()
                   }
                >
-                  <Strikethrough className="opacity-80" />
+                  <Strikethrough className="opacity-60" />
                </Toggle>
             </Hint>
             <Hint
@@ -189,7 +212,7 @@ export const Editor = ({
                      editor.chain().focus().toggleOrderedList().run()
                   }
                >
-                  <ListOrdered className="opacity-80" />
+                  <ListOrdered className="opacity-60" />
                </Toggle>
             </Hint>
             <Hint
@@ -208,7 +231,7 @@ export const Editor = ({
                      editor.chain().focus().toggleBulletList().run()
                   }
                >
-                  <List className="opacity-80" />
+                  <List className="opacity-60" />
                </Toggle>
             </Hint>
             <Hint
@@ -225,8 +248,46 @@ export const Editor = ({
                   onChange={onImageChange}
                   accept="image/*"
                >
-                  <ImageIcon className="opacity-80" />
+                  <ImageIcon className="opacity-60" />
                </FileButton>
+            </Hint>
+            <Hint
+               onMouseOver={() => setIsAnyTooltipVisible(true)}
+               onMouseLeave={() => setIsAnyTooltipVisible(false)}
+               className="px-0.5"
+               delayDuration={isAnyTooltipVisible ? 0 : 350}
+               content={"Code"}
+            >
+               <Toggle
+                  onMouseOver={() => setIsAnyTooltipVisible(true)}
+                  onMouseLeave={() => setIsAnyTooltipVisible(false)}
+                  size={"sm"}
+                  pressed={editor.isActive("code")}
+                  onPressedChange={() =>
+                     editor.chain().focus().toggleCode().run()
+                  }
+               >
+                  <Code2 className="opacity-60" />
+               </Toggle>
+            </Hint>
+            <Hint
+               onMouseOver={() => setIsAnyTooltipVisible(true)}
+               onMouseLeave={() => setIsAnyTooltipVisible(false)}
+               className="px-0.5"
+               delayDuration={isAnyTooltipVisible ? 0 : 350}
+               content={"Code block"}
+            >
+               <Toggle
+                  onMouseOver={() => setIsAnyTooltipVisible(true)}
+                  onMouseLeave={() => setIsAnyTooltipVisible(false)}
+                  size={"sm"}
+                  pressed={editor.isActive("codeBlock")}
+                  onPressedChange={() =>
+                     editor.chain().focus().toggleCodeBlock().run()
+                  }
+               >
+                  <SquareCode className="opacity-60" />
+               </Toggle>
             </Hint>
             <Hint
                onMouseOver={() => setIsAnyTooltipVisible(true)}
@@ -245,7 +306,7 @@ export const Editor = ({
                   )}
                   onClick={() => editor.chain().focus().undo().run()}
                >
-                  <Undo className="opacity-80" />
+                  <Undo className="opacity-60" />
                </button>
             </Hint>
             <Hint
@@ -265,7 +326,7 @@ export const Editor = ({
                   )}
                   onClick={() => editor.chain().focus().redo().run()}
                >
-                  <Redo className="opacity-80" />
+                  <Redo className="opacity-60" />
                </button>
             </Hint>
          </div>
@@ -273,6 +334,7 @@ export const Editor = ({
             onPaste={onImagePaste}
             editor={editor}
          />
+         {children}
       </form>
    )
 }

@@ -43,7 +43,9 @@ export default async function Login({
       })
 
       if (error) {
-         return redirect("/login?message=Could not authenticate user")
+         return redirect(
+            "/sign-in?message=Could not sign in, something went wrong"
+         )
       }
 
       redirect(data.url)

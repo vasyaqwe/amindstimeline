@@ -1,10 +1,12 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { Editor } from "@/components/ui/editor"
 import { notesMutationKey, notesQueryKey } from "@/config"
 import { useEditor } from "@/hooks/use-editor"
 import { createClient } from "@/lib/supabase/client"
 import { type Note } from "@/types/supabase"
+import { PlusIcon } from "@heroicons/react/20/solid"
 import {
    type InfiniteData,
    useMutation,
@@ -94,7 +96,19 @@ export function CreateNoteForm() {
             onSubmit={() => {
                mutate({ content, id: `optimistic-${Date.now()}` })
             }}
-         />
+         >
+            {editor && (
+               <Button
+                  disabled={editor.getText().length < 1}
+                  variant={"ghost"}
+                  size={"icon"}
+                  aria-label="Create note"
+                  className="m-3 ml-auto"
+               >
+                  <PlusIcon className="size-8 opacity-60" />
+               </Button>
+            )}
+         </Editor>
       </div>
    )
 }

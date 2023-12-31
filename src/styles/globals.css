@@ -61,7 +61,11 @@
   border-top: 1px solid hsl(var(--foreground)) !important;
 }
 
-.prose * {
+.prose {
+  max-width: 100%;
+}
+
+.prose *:not(code):not(code *) {
   color: hsl(var(--foreground)) !important;
 }
 

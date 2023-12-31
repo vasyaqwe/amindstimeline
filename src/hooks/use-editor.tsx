@@ -18,6 +18,21 @@ import {
 } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight"
+import js from "highlight.js/lib/languages/javascript"
+import jsx from "highlight.js/lib/languages/javascript"
+import ts from "highlight.js/lib/languages/typescript"
+import html from "highlight.js/lib/languages/xml"
+import css from "highlight.js/lib/languages/css"
+import { createLowlight } from "lowlight"
+
+const lowlight = createLowlight()
+
+lowlight.register("html", html)
+lowlight.register("css", css)
+lowlight.register("js", js)
+lowlight.register("ts", ts)
+lowlight.register("jsx", jsx)
 
 type UseEditorArgs = {
    value: string
@@ -49,9 +64,19 @@ export function useEditor({
    >([])
    const editor = _useEditor({
       extensions: [
-         StarterKit,
+         StarterKit.configure({
+            codeBlock: false,
+            code: {
+               HTMLAttributes: {
+                  class: "font-code font-normal !text-[#ff837f] bg-[#ff837f]/25 py-1 px-2 rounded-sm before:hidden after:hidden",
+               },
+            },
+         }),
          Link,
          ShiftEnterCreateExtension,
+         CodeBlockLowlight.configure({
+            lowlight,
+         }),
          Image.configure({
             HTMLAttributes: {
                class: "rounded-md my-5",
@@ -62,13 +87,12 @@ export function useEditor({
             showOnlyWhenEditable: false,
          }),
       ],
-
       content: value,
       editorProps: {
          attributes: {
             id: nanoid(),
             class: cn(
-               "w-full p-4 min-h-[120px] focus:outline-none prose prose-invert"
+               "w-full p-4 min-h-[80px] md:min-h-[100px] focus:outline-none prose prose-invert"
             ),
          },
       },

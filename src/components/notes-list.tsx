@@ -34,6 +34,10 @@ import { toast } from "sonner"
 import { Editor } from "@/components/ui/editor"
 import { useEventListener } from "@/hooks/use-event-listener"
 import { useEditor } from "@/hooks/use-editor"
+import { toHtml } from "hast-util-to-html"
+import { common, createLowlight } from "lowlight"
+
+const lowlight = createLowlight(common)
 
 type NotesListProps = {
    initialNotes: Note[]
@@ -115,11 +119,12 @@ export function NotesList({ initialNotes }: NotesListProps) {
    }, [entry, hasNextPage, fetchNextPage])
 
    return (
-      <div className="pt-3">
+      <div className="pt-2">
          <AnimatePresence initial={false}>
             {notes.length > 0 ? (
-               notes?.map((note) => (
+               notes?.map((note, idx) => (
                   <motion.div
+                     style={{ zIndex: idx }}
                      key={note.id}
                      exit={{
                         height: 0,
@@ -187,6 +192,7 @@ const EditorOutput = ({
    const [shouldAnimate, setShouldAnimate] = useState(
       note.id.startsWith("optimistic")
    )
+   const [isClient, setIsClient] = useState(false)
    const [isEditing, setIsEditing] = useState(false)
    const [content, setContent] = useState(note.content ?? "")
 
@@ -228,12 +234,12 @@ const EditorOutput = ({
    })
 
    const { mutate: onUpdate, isPending: isUpdatePending } = useMutation({
-      mutationKey: ["notes", note.id, "edit"],
-      mutationFn: async () => {
+      mutationKey: ["notes", note.id, "update"],
+      mutationFn: async ({ id }: { id: string }) => {
          const { data, error } = await supabase
             .from("notes")
             .update({ content })
-            .eq("id", note.id)
+            .eq("id", id)
             .select("*")
 
          if (error) {
@@ -243,7 +249,6 @@ const EditorOutput = ({
          }
       },
       onSuccess: async (updatedNote) => {
-         void queryClient.invalidateQueries({ queryKey: notesQueryKey })
          toast.success("Note updated")
          onCancelEditing()
          await resetEditor()
@@ -251,9 +256,14 @@ const EditorOutput = ({
          setContent(updatedNote?.content ?? "")
       },
       onError: () => {
+         void queryClient.invalidateQueries({ queryKey: notesQueryKey })
          toast.error("Failed to update note, something went wrong")
       },
    })
+
+   useEffect(() => {
+      setIsClient(true)
+   }, [])
 
    const { editor, onImagePaste, onImageChange, resetEditor } = useEditor({
       isPending: isUpdatePending,
@@ -273,6 +283,37 @@ const EditorOutput = ({
    })
 
    const realNoteId = optimisticNotesIdsMap[note.id]
+
+   function parseCodeBlocks() {
+      const _content = content?.replaceAll("<p></p>", "") ?? ""
+      if (!isClient) return _content
+
+      const regex = /<code>([\s\S]*?)<\/code>/gm
+      let m
+      let outputHtml = _content
+      while ((m = regex.exec(_content)) !== null) {
+         // Extract the unescaped innerText of the <code> tag
+         const tempDiv = document.createElement("div")
+         tempDiv.innerHTML = m[0]
+         const codeText = (tempDiv?.firstChild as HTMLElement)?.innerText
+
+         // Replace the <code> block with the processed version
+         const processedCodeText = toHtml(lowlight.highlightAuto(codeText))
+
+         const newCodeTag = `<code>${processedCodeText}</code>`
+         outputHtml =
+            outputHtml.substring(0, m.index) +
+            newCodeTag +
+            outputHtml.substring(regex.lastIndex)
+         regex.lastIndex += newCodeTag.length - m[0].length
+
+         // Replace escaped characters back to "<" and ">"
+         outputHtml = outputHtml.replace(/</g, "<").replace(/&gt;/g, ">")
+      }
+      return outputHtml
+   }
+
+   const noteId = isOptimistic && realNoteId ? realNoteId : note.id
 
    return (
       <>
@@ -316,7 +357,7 @@ const EditorOutput = ({
                      disabled={isUpdatePending}
                      size={"icon"}
                      className="rounded-l-none border-l-transparent text-foreground/60 hover:border-[#16a34a]/25 hover:text-[#16a34a]/60"
-                     onClick={() => onUpdate()}
+                     onClick={() => onUpdate({ id: noteId })}
                   >
                      {isUpdatePending ? (
                         <Loading />
@@ -331,8 +372,7 @@ const EditorOutput = ({
                      className="rounded-l-none border-l-transparent text-foreground/60 hover:border-destructive/25 hover:text-destructive/60"
                      onClick={() =>
                         onDelete({
-                           id:
-                              isOptimistic && realNoteId ? realNoteId : note.id,
+                           id: noteId,
                         })
                      }
                   >
@@ -346,13 +386,13 @@ const EditorOutput = ({
             </div>
          )}
          <div
-            className="relative z-[2] overflow-hidden [&>*]:mt-4"
+            className="group relative z-[2] overflow-hidden [&>*]:mt-4"
             ref={wrapperRef}
          >
             {isEditing ? (
                <Editor
                   onSubmit={() => {
-                     onUpdate()
+                     onUpdate({ id: noteId })
                   }}
                   editor={editor}
                   isPending={isUpdatePending}
@@ -361,12 +401,15 @@ const EditorOutput = ({
                />
             ) : (
                <div
+                  data-hovered={isEditing}
                   className={cn(
-                     "group prose prose-invert max-w-full rounded-2xl border border-border/30 bg-muted p-5 transition-colors hover:border-border",
+                     "group prose prose-invert max-w-full rounded-2xl border border-border/30 bg-muted p-5 transition-colors hover:border-border group-hover:border-border",
                      shouldAnimate ? "animate-in-note" : ""
                   )}
                   dangerouslySetInnerHTML={{
-                     __html: content?.replaceAll("<p></p>", "") ?? "",
+                     __html: content.includes("<code>")
+                        ? parseCodeBlocks()
+                        : content?.replaceAll("<p></p>", "") ?? "",
                   }}
                />
             )}

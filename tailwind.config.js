@@ -21,6 +21,7 @@ module.exports = {
          fontFamily: {
             primary: "var(--font-geist-sans)",
             accent: "var(--font-carattere)",
+            code: "var(--font-jet-brains)",
          },
          colors: {
             border: "hsl(var(--border))",

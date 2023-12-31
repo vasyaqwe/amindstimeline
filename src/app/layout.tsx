@@ -1,6 +1,8 @@
 import { GeistSans } from "geist/font"
 import { Carattere } from "next/font/google"
+import { JetBrains_Mono } from "next/font/google"
 import "@/styles/globals.css"
+import "@/styles/github-dark.css"
 import { TanstackProvider } from "@/components/tanstack-provider"
 import { Toaster } from "sonner"
 
@@ -19,6 +21,11 @@ const carattere = Carattere({
    variable: "--font-carattere",
    weight: ["400"],
 })
+const jetBrainsMono = JetBrains_Mono({
+   subsets: ["latin"],
+   variable: "--font-jet-brains",
+   weight: ["400"],
+})
 
 export default function RootLayout({
    children,
@@ -28,7 +35,13 @@ export default function RootLayout({
    return (
       <html
          lang="en"
-         className={GeistSans.variable + " " + carattere.variable}
+         className={
+            GeistSans.variable +
+            " " +
+            carattere.variable +
+            " " +
+            jetBrainsMono.variable
+         }
       >
          <body className="bg-background font-primary text-foreground">
             <TanstackProvider>{children}</TanstackProvider>
