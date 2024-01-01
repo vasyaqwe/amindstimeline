@@ -22,8 +22,9 @@ import {
    useEffect,
    useState,
    useRef,
+   Fragment,
 } from "react"
-import { chunk, cn, getFileNamesFromHTML } from "@/lib/utils"
+import { chunk, cn, getFileNamesFromHTML, groupByDate } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
    CheckIcon,
@@ -119,47 +120,64 @@ export function NotesList({ initialNotes }: NotesListProps) {
          void fetchNextPage()
       }
    }, [entry, hasNextPage, fetchNextPage])
+   console.log(groupByDate(notes))
 
    return (
-      <div className="pt-2">
+      <div>
          <AnimatePresence initial={false}>
             {notes.length > 0 ? (
-               notes?.map((note, idx) => (
-                  <motion.div
-                     style={{ zIndex: idx }}
-                     key={note.id}
-                     exit={{
-                        height: 0,
-                        opacity: 0,
-                     }}
-                     initial={{
-                        height: 0,
-                        opacity: 0,
-                     }}
-                     animate={{
-                        opacity: 1,
-                        height: "auto",
-                        transition: {
-                           type: "spring",
-                           bounce: 0.3,
-                           opacity: { delay: 0.1 },
-                        },
-                     }}
-                     transition={{
-                        duration: 0.7,
-                        type: "spring",
-                        bounce: 0,
-                        opacity: { duration: 0.25 },
-                     }}
-                     className="group relative lg:px-12"
-                  >
-                     <EditorOutput
-                        note={note}
-                        optimisticNotesIdsMap={optimisticNotesIdsMap}
-                        setDeletedIds={setDeletedIds}
-                     />
-                  </motion.div>
-               ))
+               Object.entries(groupByDate(notes))?.map((group, idx) => {
+                  return (
+                     <div
+                        className="relative mt-3"
+                        key={idx}
+                     >
+                        <p className="right-full top-4 whitespace-nowrap text-right text-muted-foreground max-lg:text-center lg:absolute">
+                           {" "}
+                           {group[0]}{" "}
+                           <span className="text-lg text-accent">
+                              {group[1].length}
+                           </span>
+                        </p>
+                        {group[1].map((note) => (
+                           <motion.div
+                              style={{ zIndex: idx }}
+                              key={note.id}
+                              exit={{
+                                 height: 0,
+                                 opacity: 0,
+                              }}
+                              initial={{
+                                 height: 0,
+                                 opacity: 0,
+                              }}
+                              animate={{
+                                 opacity: 1,
+                                 height: "auto",
+                                 transition: {
+                                    type: "spring",
+                                    bounce: 0.3,
+                                    opacity: { delay: 0.1 },
+                                 },
+                              }}
+                              transition={{
+                                 duration: 0.7,
+                                 type: "spring",
+                                 bounce: 0,
+                                 opacity: { duration: 0.25 },
+                              }}
+                              className="group relative lg:px-12"
+                           >
+                              <EditorOutput
+                                 note={note}
+                                 optimisticNotesIdsMap={optimisticNotesIdsMap}
+                                 setDeletedIds={setDeletedIds}
+                              />
+                           </motion.div>
+                        ))}
+                     </div>
+                  )
+               })
             ) : variables.length < 1 ? (
                <h1 className="mt-5 text-center font-accent text-5xl">
                   Things to come...
@@ -201,6 +219,10 @@ const EditorOutput = ({
    const wrapperRef = useRef<HTMLDivElement>(null)
 
    const isOptimistic = note.id.startsWith("optimistic")
+
+   useEffect(() => {
+      setIsClient(true)
+   }, [])
 
    const { mutate: onDelete, isPending: isDeletePending } = useMutation({
       mutationFn: async ({ id }: { id: string }) => {
@@ -287,10 +309,6 @@ const EditorOutput = ({
       },
    })
 
-   useEffect(() => {
-      setIsClient(true)
-   }, [])
-
    const { editor, onImagePaste, onImageChange, resetEditor } = useEditor({
       isPending: isUpdatePending,
       onChange: (value) => setContent(value),
@@ -340,10 +358,9 @@ const EditorOutput = ({
    }
 
    const noteId = isOptimistic && realNoteId ? realNoteId : note.id
-
    return (
       <>
-         {(realNoteId || !isOptimistic) && (
+         {(noteId || !isOptimistic) && (
             <div
                data-visible={isEditing}
                className={`absolute z-[1] mt-4 flex scale-75 opacity-0 transition duration-300 group-hover:scale-100
@@ -356,33 +373,9 @@ const EditorOutput = ({
             >
                {isEditing ? (
                   <Button
-                     disabled={isDeletePending}
-                     size={"icon"}
-                     className="rounded-r-none border-r-transparent text-foreground/60 hover:border"
-                     onClick={onCancelEditing}
-                  >
-                     <XMarkIcon className="size-7 fill-current" />
-                  </Button>
-               ) : (
-                  <Button
-                     size={"icon"}
-                     className="rounded-r-none border-r-transparent text-foreground/60 hover:border"
-                     onClick={() => {
-                        setShouldAnimate(false)
-                        setIsEditing(true)
-
-                        if (editor) editor.commands.focus("end")
-                     }}
-                  >
-                     <PencilIcon className="size-5 fill-current" />
-                  </Button>
-               )}
-
-               {isEditing ? (
-                  <Button
                      disabled={isUpdatePending}
                      size={"icon"}
-                     className="rounded-l-none border-l-transparent text-foreground/60 hover:border-[#16a34a]/25 hover:text-[#16a34a]/60"
+                     className="rounded-r-none border-r-transparent text-foreground/60 hover:border-[#16a34a]/25 hover:text-[#16a34a]/60"
                      onClick={() => onUpdate({ id: noteId })}
                   >
                      {isUpdatePending ? (
@@ -395,7 +388,7 @@ const EditorOutput = ({
                   <Button
                      disabled={isDeletePending}
                      size={"icon"}
-                     className="rounded-l-none border-l-transparent text-foreground/60 hover:border-destructive/25 hover:text-destructive/60"
+                     className="rounded-r-none border-r-transparent text-foreground/60 hover:border-destructive/25 hover:text-destructive/60"
                      onClick={() =>
                         onDelete({
                            id: noteId,
@@ -409,6 +402,29 @@ const EditorOutput = ({
                      )}
                   </Button>
                )}
+               {isEditing ? (
+                  <Button
+                     disabled={isDeletePending}
+                     size={"icon"}
+                     className="rounded-l-none border-l-transparent text-foreground/60 hover:border"
+                     onClick={onCancelEditing}
+                  >
+                     <XMarkIcon className="size-7 fill-current" />
+                  </Button>
+               ) : (
+                  <Button
+                     size={"icon"}
+                     className="rounded-l-none border-l-transparent text-foreground/60 hover:border"
+                     onClick={() => {
+                        setShouldAnimate(false)
+                        setIsEditing(true)
+
+                        if (editor) editor.commands.focus("end")
+                     }}
+                  >
+                     <PencilIcon className="size-5 fill-current" />
+                  </Button>
+               )}
             </div>
          )}
          <div
@@ -417,6 +433,7 @@ const EditorOutput = ({
          >
             {isEditing ? (
                <Editor
+                  shouldSubmitOnEnter={false}
                   onSubmit={() => {
                      onUpdate({ id: noteId })
                   }}

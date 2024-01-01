@@ -36,12 +36,14 @@ type EditorProps = {
    onImageChange: (e: ChangeEvent<HTMLInputElement>) => void
    onSubmit: () => void
    isPending: boolean
+   shouldSubmitOnEnter?: boolean
 } & Omit<ComponentProps<"form">, "onChange">
 
 export const Editor = ({
    onSubmit,
    onImagePaste,
    onImageChange,
+   shouldSubmitOnEnter = true,
    editor,
    isPending,
    children,
@@ -84,7 +86,8 @@ export const Editor = ({
                !editor.state.doc.textContent.trim().length &&
                !editor.getJSON().content?.some((i) => i.type === "image")
 
-            if (isEmpty || isPending || isMobile()) return
+            if (isEmpty || isPending || isMobile() || !shouldSubmitOnEnter)
+               return
 
             if (
                e.key === "Enter" &&
@@ -120,7 +123,7 @@ export const Editor = ({
                      editor.chain().focus().toggleHeading({ level: 1 }).run()
                   }
                >
-                  <Heading1 className="opacity-60" />
+                  <Heading1 className="size-[22px] opacity-60" />
                </Toggle>
             </Hint>
             <Hint
@@ -137,7 +140,7 @@ export const Editor = ({
                      editor.chain().focus().toggleHeading({ level: 2 }).run()
                   }
                >
-                  <Heading2 className="opacity-60" />
+                  <Heading2 className="size-[22px] opacity-60" />
                </Toggle>
             </Hint>
             <Hint
@@ -156,7 +159,7 @@ export const Editor = ({
                      editor.chain().focus().toggleBold().run()
                   }
                >
-                  <Bold className="opacity-60" />
+                  <Bold className="size-[22px] opacity-60" />
                </Toggle>
             </Hint>
             <Hint
@@ -175,7 +178,7 @@ export const Editor = ({
                      editor.chain().focus().toggleItalic().run()
                   }
                >
-                  <Italic className="opacity-60" />
+                  <Italic className="size-[22px] opacity-60" />
                </Toggle>
             </Hint>
             <Hint
@@ -194,7 +197,7 @@ export const Editor = ({
                      editor.chain().focus().toggleStrike().run()
                   }
                >
-                  <Strikethrough className="opacity-60" />
+                  <Strikethrough className="size-[22px] opacity-60" />
                </Toggle>
             </Hint>
             <Hint
@@ -213,7 +216,7 @@ export const Editor = ({
                      editor.chain().focus().toggleOrderedList().run()
                   }
                >
-                  <ListOrdered className="opacity-60" />
+                  <ListOrdered className="size-[22px] opacity-60" />
                </Toggle>
             </Hint>
             <Hint
@@ -232,7 +235,7 @@ export const Editor = ({
                      editor.chain().focus().toggleBulletList().run()
                   }
                >
-                  <List className="opacity-60" />
+                  <List className="size-[22px] opacity-60" />
                </Toggle>
             </Hint>
             <Hint
@@ -249,7 +252,7 @@ export const Editor = ({
                   onChange={onImageChange}
                   accept="image/*"
                >
-                  <ImageIcon className="opacity-60" />
+                  <ImageIcon className="size-[22px] opacity-60" />
                </FileButton>
             </Hint>
             <Hint
@@ -268,7 +271,7 @@ export const Editor = ({
                      editor.chain().focus().toggleCode().run()
                   }
                >
-                  <Code2 className="opacity-60" />
+                  <Code2 className="size-[22px] opacity-60" />
                </Toggle>
             </Hint>
             <Hint
@@ -287,7 +290,7 @@ export const Editor = ({
                      editor.chain().focus().toggleCodeBlock().run()
                   }
                >
-                  <SquareCode className="opacity-60" />
+                  <SquareCode className="size-[22px] opacity-60" />
                </Toggle>
             </Hint>
             <Hint
@@ -305,9 +308,10 @@ export const Editor = ({
                      toggleVariants({ size: "sm" }),
                      "text-foreground"
                   )}
+                  disabled={!editor.can().undo()}
                   onClick={() => editor.chain().focus().undo().run()}
                >
-                  <Undo className="opacity-60" />
+                  <Undo className="size-[22px] opacity-60" />
                </button>
             </Hint>
             <Hint
@@ -325,9 +329,10 @@ export const Editor = ({
                      toggleVariants({ size: "sm" }),
                      "text-foreground"
                   )}
+                  disabled={!editor.can().redo()}
                   onClick={() => editor.chain().focus().redo().run()}
                >
-                  <Redo className="opacity-60" />
+                  <Redo className="size-[22px] opacity-60" />
                </button>
             </Hint>
          </div>

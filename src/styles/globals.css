@@ -6,20 +6,20 @@
   :root {
     --avatar-size: 30px;
 
-    --background: 0 0% 6%;
+    --background: 0 0% 5%;
     --foreground: 0 0% 87%;
 
     --popover: 240 5% 10%;
     --popover-foreground: 0 0% 80%;
 
-    --primary: 240 5% 11%;
+    --primary: 240 5% 9%;
     --primary-foreground: 0 0% 94%;
 
     --secondary: 260 4% 12%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 240 2% 8%;
-    --muted-foreground: 240 2% 27%;
+    --muted: 240 2% 7%;
+    --muted-foreground: 240 2% 21%;
 
     --accent: 37 91% 75%;
     --accent-2: 25 92% 51%;
@@ -28,7 +28,7 @@
     --destructive: 0 84.2% 48%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 240 2% 20%;
+    --border: 240 2% 15%;
     --input: 0 0% 25%;
     --ring: 0 0% 98%;
 

@@ -55,7 +55,7 @@ export function CreateNoteForm() {
                        {
                           content,
                           id,
-                          created_at: "",
+                          created_at: new Date().toString(),
                           created_by: "",
                        },
                        ...page,
@@ -87,7 +87,7 @@ export function CreateNoteForm() {
    })
 
    return (
-      <div className="border-b border-border/60 pb-6 lg:mx-12">
+      <div className="border-b border-border/50 pb-7 lg:mx-12">
          <Editor
             editor={editor}
             isPending={isPending}

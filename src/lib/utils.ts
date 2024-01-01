@@ -1,3 +1,4 @@
+import { type Note } from "@/types/supabase"
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -34,4 +35,45 @@ export function chunk(arr: any[], chunkSize: number) {
       chunkedArr.push(chunk)
    }
    return chunkedArr
+}
+
+function formatDate(timestamp: string) {
+   const date = new Date(timestamp)
+
+   return new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      day: "numeric",
+   }).format(date)
+}
+
+export const groupByDate = (notes: Note[]) => {
+   return notes.reduce((acc: Record<string, Note[]>, curr) => {
+      const key = getDisplayKey(curr)
+
+      if (!acc[key]) acc[key] = []
+
+      acc[key]?.push(curr)
+
+      return acc
+   }, {})
+}
+
+function getDisplayKey(note: Note) {
+   const date = new Date(note.created_at)
+
+   const now = new Date()
+   const yesterday = new Date(now)
+
+   yesterday.setDate(now.getDate() - 1)
+
+   const beforeYesterday = new Date(now)
+   beforeYesterday.setDate(now.getDate() - 2)
+
+   if (date.toDateString() === now.toDateString()) {
+      return "Today"
+   } else if (date.toDateString() === yesterday.toDateString()) {
+      return "Yesterday"
+   }
+
+   return formatDate(note.created_at)
 }
