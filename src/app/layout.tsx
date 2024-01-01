@@ -12,8 +12,8 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata = {
    metadataBase: new URL(defaultUrl),
-   title: "a mind's timeline",
-   description: "Anything on your mind - place it here.",
+   title: "memento",
+   description: "Anything on your mind - note it down here.",
 }
 
 const carattere = Carattere({

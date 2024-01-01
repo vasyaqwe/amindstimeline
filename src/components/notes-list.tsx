@@ -13,6 +13,7 @@ import {
    useMutationState,
    useMutation,
    useQueryClient,
+   type InfiniteData,
 } from "@tanstack/react-query"
 import { AnimatePresence } from "framer-motion"
 import {
@@ -22,7 +23,7 @@ import {
    useState,
    useRef,
 } from "react"
-import { cn, getFileNamesFromHTML } from "@/lib/utils"
+import { chunk, cn, getFileNamesFromHTML } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
    CheckIcon,
@@ -79,6 +80,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
       Record<string, string>
    >({})
 
+   //this weird trick is required to make framer motion work with tanstack query
    useEffect(() => {
       setOptimisticNotesIdsMap(() =>
          createdNotes.reduce((acc: Record<string, string>, curr) => {
@@ -201,7 +203,6 @@ const EditorOutput = ({
    const isOptimistic = note.id.startsWith("optimistic")
 
    const { mutate: onDelete, isPending: isDeletePending } = useMutation({
-      mutationKey: ["notes", note.id, "delete"],
       mutationFn: async ({ id }: { id: string }) => {
          const { data, error } = await supabase
             .from("notes")
@@ -234,7 +235,7 @@ const EditorOutput = ({
    })
 
    const { mutate: onUpdate, isPending: isUpdatePending } = useMutation({
-      mutationKey: ["notes", note.id, "update"],
+      mutationKey: ["notes-update"],
       mutationFn: async ({ id }: { id: string }) => {
          const { data, error } = await supabase
             .from("notes")
@@ -249,6 +250,32 @@ const EditorOutput = ({
          }
       },
       onSuccess: async (updatedNote) => {
+         //update note's content (can't update everything with invalidateQueries because framer motion animation will trigger)
+         const previousNotes =
+            queryClient.getQueryData<InfiniteData<Note[]>>(notesQueryKey)
+         if (updatedNote && previousNotes) {
+            const _optimisticNotesIdsMap: Record<string, string> =
+               Object.entries(optimisticNotesIdsMap).reduce(
+                  (acc, [key, value]) => ({ ...acc, [value]: key }),
+                  {}
+               )
+
+            const updatedNotes = previousNotes.pages.flatMap((notes) =>
+               notes.map((n) =>
+                  n.id === _optimisticNotesIdsMap[updatedNote.id]
+                     ? {
+                          ...n,
+                          content: updatedNote?.content,
+                       }
+                     : n
+               )
+            )
+            queryClient.setQueryData<InfiniteData<Note[]>>(notesQueryKey, {
+               ...previousNotes,
+               pages: chunk(updatedNotes, NOTES_LIMIT),
+            })
+         }
+
          toast.success("Note updated")
          onCancelEditing()
          await resetEditor()
@@ -256,7 +283,6 @@ const EditorOutput = ({
          setContent(updatedNote?.content ?? "")
       },
       onError: () => {
-         void queryClient.invalidateQueries({ queryKey: notesQueryKey })
          toast.error("Failed to update note, something went wrong")
       },
    })

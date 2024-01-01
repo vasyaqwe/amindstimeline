@@ -93,6 +93,7 @@ export const Editor = ({
                !isEmpty &&
                !editor.isActive("bulletList") &&
                !editor.isActive("orderedList") &&
+               !editor.isActive("codeBlock") &&
                !isPending
             ) {
                formRef.current?.requestSubmit()

@@ -76,6 +76,7 @@ export function useEditor({
          ShiftEnterCreateExtension,
          CodeBlockLowlight.configure({
             lowlight,
+            exitOnTripleEnter: false,
          }),
          Image.configure({
             HTMLAttributes: {

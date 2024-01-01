@@ -29,7 +29,7 @@ export async function Header() {
                src={logo}
                alt="a mind's timeline"
             />
-            a mind's timeline
+            memento
          </p>{" "}
          {/* <form action={signOut}>
             <button className="bg-btn-background hover:bg-btn-background-hover rounded-md px-4 py-2 no-underline">

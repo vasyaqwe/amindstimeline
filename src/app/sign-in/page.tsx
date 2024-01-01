@@ -62,7 +62,7 @@ export default async function Login({
                src={logo}
                alt="a mind's timeline"
             />
-            a mind's timeline
+       memento
          </h1>
          <Button size={"lg"}>
             <svg
