@@ -28,7 +28,7 @@ export default async function Login({
       const baseUrl =
          process.env.NODE_ENV === "development"
             ? "http://localhost:3000"
-            : `https://amindstimeline.vercel.app`
+            : `https://trymemento.vercel.app`
 
       const { error, data } = await supabase.auth.signInWithOAuth({
          provider: "google",
@@ -62,7 +62,7 @@ export default async function Login({
                src={logo}
                alt="a mind's timeline"
             />
-       memento
+            memento
          </h1>
          <Button size={"lg"}>
             <svg
