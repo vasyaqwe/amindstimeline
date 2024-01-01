@@ -120,25 +120,24 @@ export function NotesList({ initialNotes }: NotesListProps) {
          void fetchNextPage()
       }
    }, [entry, hasNextPage, fetchNextPage])
-   console.log(groupByDate(notes))
 
    return (
       <div>
-         <AnimatePresence initial={false}>
-            {notes.length > 0 ? (
-               Object.entries(groupByDate(notes))?.map((group, idx) => {
-                  return (
-                     <div
-                        className="relative mt-3"
-                        key={idx}
-                     >
-                        <p className="right-full top-4 whitespace-nowrap text-right text-muted-foreground max-lg:text-center lg:absolute">
-                           {" "}
-                           {group[0]}{" "}
-                           <span className="text-lg text-accent">
-                              {group[1].length}
-                           </span>
-                        </p>
+         {notes.length > 0 ? (
+            Object.entries(groupByDate(notes))?.map((group, idx) => {
+               return (
+                  <div
+                     className="relative mt-3"
+                     key={idx}
+                  >
+                     <p className="right-full top-4 whitespace-nowrap text-right text-muted-foreground max-lg:text-center lg:absolute">
+                        {" "}
+                        {group[0]}{" "}
+                        <span className="text-lg text-accent">
+                           {group[1].length}
+                        </span>
+                     </p>
+                     <AnimatePresence initial={false}>
                         {group[1].map((note) => (
                            <motion.div
                               style={{ zIndex: idx }}
@@ -175,15 +174,15 @@ export function NotesList({ initialNotes }: NotesListProps) {
                               />
                            </motion.div>
                         ))}
-                     </div>
-                  )
-               })
-            ) : variables.length < 1 ? (
-               <h1 className="mt-5 text-center font-accent text-5xl">
-                  Things to come...
-               </h1>
-            ) : null}
-         </AnimatePresence>
+                     </AnimatePresence>
+                  </div>
+               )
+            })
+         ) : variables.length < 1 ? (
+            <h1 className="mt-5 text-center font-accent text-5xl">
+               Things to come...
+            </h1>
+         ) : null}
 
          {isFetchedAfterMount && isFetchingNextPage && notes.length > 1 && (
             <Loading className="mx-auto mt-6" />
