@@ -134,7 +134,9 @@ export function NotesList({ initialNotes }: NotesListProps) {
                         {" "}
                         {group[0]}{" "}
                         <span className="text-lg text-accent">
-                           {group[1].length}
+                           {group[1].length > NOTES_LIMIT - 1
+                              ? "15+"
+                              : group[1].length}
                         </span>
                      </p>
                      <AnimatePresence initial={false}>

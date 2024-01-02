@@ -191,8 +191,10 @@ export function useEditor({
 
             const { data, error } = await supabase.storage
                .from("files")
-               .upload(`${editorId}-${file.name}`, file, { upsert: true })
-
+               .upload(`${editorId}-${file.name}-${file.size}`, file, {
+                  upsert: true,
+               })
+            console.log(file)
             if (error) {
                throw new Error("Error")
             }
