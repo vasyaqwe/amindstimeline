@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 "use client"
 
-import { motion } from "framer-motion"
+import { LayoutGroup, motion } from "framer-motion"
 import { type Note } from "@/types/supabase"
 import { Loading } from "@/components/ui/loading"
 import { NOTES_LIMIT, notesMutationKey, notesQueryKey } from "@/config"
@@ -122,96 +122,98 @@ export function NotesList({ initialNotes }: NotesListProps) {
       }
    }, [entry, hasNextPage, fetchNextPage])
 
+   const transition = {
+      type: "spring",
+      bounce: 0,
+      opacity: { duration: 0.25 },
+   }
+
    return (
-      <div className="mt-3">
-         <AnimatePresence initial={false}>
-            {notes.length > 0 ? (
-               notes?.map((group) => {
-                  return (
-                     <motion.div
-                        className="relative "
-                        key={group[0]}
-                        exit={{
-                           height: 0,
-                           opacity: 0,
-                        }}
-                        initial={{
-                           height: 0,
-                           opacity: 0,
-                        }}
-                        animate={{
-                           opacity: 1,
-                           height: "auto",
-                           transition: {
-                              type: "spring",
-                              bounce: 0,
-                              opacity: { delay: 0.1 },
-                           },
-                        }}
-                        transition={{
-                           duration: 0.7,
-                           type: "spring",
-                           bounce: 0,
-                           opacity: { duration: 0.25 },
-                        }}
-                     >
-                        <p className="right-full top-4 whitespace-nowrap text-right text-muted-foreground max-lg:text-center lg:absolute">
-                           {" "}
-                           {group[0]}{" "}
-                           <span className="text-lg text-accent">
-                              {group[1].length > NOTES_LIMIT - 1
-                                 ? "15+"
-                                 : group[1].length}
-                           </span>
-                        </p>
-                        <AnimatePresence initial={false}>
-                           {group[1].map((note, noteIdx) => (
-                              <motion.div
-                                 style={{ zIndex: noteIdx }}
-                                 key={note.id}
-                                 exit={{
-                                    height: 0,
-                                    opacity: 0,
-                                 }}
-                                 initial={{
-                                    height: 0,
-                                    opacity: 0,
-                                 }}
-                                 animate={{
-                                    opacity: 1,
-                                    height: "auto",
-                                    transition: {
-                                       type: "spring",
-                                       bounce: 0,
-                                       opacity: { delay: 0.1 },
-                                    },
-                                 }}
-                                 transition={{
+      <div className="pt-3">
+         <LayoutGroup>
+            <AnimatePresence initial={false}>
+               {notes.length > 0 ? (
+                  notes?.map((group) => {
+                     return (
+                        <motion.div
+                           layout={"position"}
+                           exit={{
+                              height: 0,
+                              opacity: 0,
+                           }}
+                           transition={transition}
+                           key={group[0]}
+                           className="relative"
+                        >
+                           <motion.p
+                              initial={{
+                                 height: 0,
+                                 opacity: 0,
+                              }}
+                              animate={{
+                                 opacity: 1,
+                                 height: "auto",
+                                 transition: {
                                     type: "spring",
                                     bounce: 0,
-                                    opacity: { duration: 0.25 },
-                                 }}
-                                 className="group relative lg:px-12"
-                              >
-                                 <EditorOutput
-                                    note={note}
-                                    optimisticNotesIdsMap={
-                                       optimisticNotesIdsMap
-                                    }
-                                    setDeletedIds={setDeletedIds}
-                                 />
-                              </motion.div>
-                           ))}
-                        </AnimatePresence>
-                     </motion.div>
-                  )
-               })
-            ) : variables.length < 1 ? (
-               <h1 className="mt-5 text-center font-accent text-5xl">
-                  Things to come...
-               </h1>
-            ) : null}
-         </AnimatePresence>
+                                    opacity: { delay: 0.1 },
+                                 },
+                              }}
+                              className="right-full top-4 whitespace-nowrap text-right text-muted-foreground max-lg:text-center lg:absolute"
+                           >
+                              {" "}
+                              {group[0]}{" "}
+                              <span className="ml-1 text-lg text-accent">
+                                 {group[1].length > NOTES_LIMIT - 1
+                                    ? "15+"
+                                    : group[1].length}
+                              </span>
+                           </motion.p>
+                           <AnimatePresence initial={false}>
+                              {group[1].map((note, noteIdx) => (
+                                 <motion.div
+                                    style={{ zIndex: noteIdx }}
+                                    key={note.id}
+                                    exit={{
+                                       height: 0,
+                                       opacity: 0,
+                                    }}
+                                    initial={{
+                                       height: 0,
+                                       opacity: 0,
+                                    }}
+                                    animate={{
+                                       opacity: 1,
+                                       height: "auto",
+                                       transition: {
+                                          type: "spring",
+                                          bounce: 0,
+                                          opacity: { delay: 0.1 },
+                                       },
+                                    }}
+                                    transition={transition}
+                                    className="group relative lg:px-12"
+                                 >
+                                    <EditorOutput
+                                       note={note}
+                                       optimisticNotesIdsMap={
+                                          optimisticNotesIdsMap
+                                       }
+                                       setDeletedIds={setDeletedIds}
+                                    />
+                                 </motion.div>
+                              ))}
+                           </AnimatePresence>
+                        </motion.div>
+                     )
+                  })
+               ) : variables.length < 1 ? (
+                  <h1 className="mt-5 text-center font-accent text-5xl">
+                     Things to come...
+                  </h1>
+               ) : null}
+            </AnimatePresence>
+         </LayoutGroup>
 
          {isFetchedAfterMount && isFetchingNextPage && notes.length > 1 && (
             <Loading className="mx-auto mt-6" />
@@ -438,7 +440,12 @@ const EditorOutput = ({
                   <Button
                      disabled={isUpdatePending}
                      size={"icon"}
-                     className="rounded-l-none border-l-transparent text-foreground/60 hover:border-[#16a34a]/25 hover:text-[#16a34a]/60"
+                     className={cn(
+                        "rounded-l-none border-l-transparent text-foreground/60",
+                        !isUpdatePending
+                           ? "hover:border-[#16a34a]/25 hover:text-[#16a34a]/60"
+                           : ""
+                     )}
                      onClick={() => onUpdate({ id: noteId })}
                   >
                      {isUpdatePending ? (
