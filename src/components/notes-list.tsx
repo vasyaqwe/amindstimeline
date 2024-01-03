@@ -21,7 +21,6 @@ import {
    type SetStateAction,
    useEffect,
    useState,
-   useRef,
    Fragment,
 } from "react"
 import { chunk, cn, getFileNamesFromHTML, groupByDate } from "@/lib/utils"
@@ -109,7 +108,9 @@ export function NotesList({ initialNotes }: NotesListProps) {
       initialData: { pageParams: [1], pages: [initialNotes] },
    })
 
-   const notes = data.pages?.flat().filter((n) => !deletedIds.includes(n.id))
+   const notes = Object.entries(
+      groupByDate(data.pages?.flat().filter((n) => !deletedIds.includes(n.id)))
+   )
 
    const { ref, entry } = useIntersection({
       threshold: 0,
@@ -122,69 +123,95 @@ export function NotesList({ initialNotes }: NotesListProps) {
    }, [entry, hasNextPage, fetchNextPage])
 
    return (
-      <div>
-         {notes.length > 0 ? (
-            Object.entries(groupByDate(notes))?.map((group, idx) => {
-               return (
-                  <div
-                     className="relative mt-3"
-                     key={idx}
-                  >
-                     <p className="right-full top-4 whitespace-nowrap text-right text-muted-foreground max-lg:text-center lg:absolute">
-                        {" "}
-                        {group[0]}{" "}
-                        <span className="text-lg text-accent">
-                           {group[1].length > NOTES_LIMIT - 1
-                              ? "15+"
-                              : group[1].length}
-                        </span>
-                     </p>
-                     <AnimatePresence initial={false}>
-                        {group[1].map((note) => (
-                           <motion.div
-                              style={{ zIndex: idx }}
-                              key={note.id}
-                              exit={{
-                                 height: 0,
-                                 opacity: 0,
-                              }}
-                              initial={{
-                                 height: 0,
-                                 opacity: 0,
-                              }}
-                              animate={{
-                                 opacity: 1,
-                                 height: "auto",
-                                 transition: {
+      <div className="mt-3">
+         <AnimatePresence initial={false}>
+            {notes.length > 0 ? (
+               notes?.map((group) => {
+                  return (
+                     <motion.div
+                        className="relative "
+                        key={group[0]}
+                        exit={{
+                           height: 0,
+                           opacity: 0,
+                        }}
+                        initial={{
+                           height: 0,
+                           opacity: 0,
+                        }}
+                        animate={{
+                           opacity: 1,
+                           height: "auto",
+                           transition: {
+                              type: "spring",
+                              bounce: 0,
+                              opacity: { delay: 0.1 },
+                           },
+                        }}
+                        transition={{
+                           duration: 0.7,
+                           type: "spring",
+                           bounce: 0,
+                           opacity: { duration: 0.25 },
+                        }}
+                     >
+                        <p className="right-full top-4 whitespace-nowrap text-right text-muted-foreground max-lg:text-center lg:absolute">
+                           {" "}
+                           {group[0]}{" "}
+                           <span className="text-lg text-accent">
+                              {group[1].length > NOTES_LIMIT - 1
+                                 ? "15+"
+                                 : group[1].length}
+                           </span>
+                        </p>
+                        <AnimatePresence initial={false}>
+                           {group[1].map((note, noteIdx) => (
+                              <motion.div
+                                 style={{ zIndex: noteIdx }}
+                                 key={note.id}
+                                 exit={{
+                                    height: 0,
+                                    opacity: 0,
+                                 }}
+                                 initial={{
+                                    height: 0,
+                                    opacity: 0,
+                                 }}
+                                 animate={{
+                                    opacity: 1,
+                                    height: "auto",
+                                    transition: {
+                                       type: "spring",
+                                       bounce: 0,
+                                       opacity: { delay: 0.1 },
+                                    },
+                                 }}
+                                 transition={{
                                     type: "spring",
-                                    bounce: 0.3,
-                                    opacity: { delay: 0.1 },
-                                 },
-                              }}
-                              transition={{
-                                 duration: 0.7,
-                                 type: "spring",
-                                 bounce: 0,
-                                 opacity: { duration: 0.25 },
-                              }}
-                              className="group relative lg:px-12"
-                           >
-                              <EditorOutput
-                                 note={note}
-                                 optimisticNotesIdsMap={optimisticNotesIdsMap}
-                                 setDeletedIds={setDeletedIds}
-                              />
-                           </motion.div>
-                        ))}
-                     </AnimatePresence>
-                  </div>
-               )
-            })
-         ) : variables.length < 1 ? (
-            <h1 className="mt-5 text-center font-accent text-5xl">
-               Things to come...
-            </h1>
-         ) : null}
+                                    bounce: 0,
+                                    opacity: { duration: 0.25 },
+                                 }}
+                                 className="group relative lg:px-12"
+                              >
+                                 <EditorOutput
+                                    note={note}
+                                    optimisticNotesIdsMap={
+                                       optimisticNotesIdsMap
+                                    }
+                                    setDeletedIds={setDeletedIds}
+                                 />
+                              </motion.div>
+                           ))}
+                        </AnimatePresence>
+                     </motion.div>
+                  )
+               })
+            ) : variables.length < 1 ? (
+               <h1 className="mt-5 text-center font-accent text-5xl">
+                  Things to come...
+               </h1>
+            ) : null}
+         </AnimatePresence>
 
          {isFetchedAfterMount && isFetchingNextPage && notes.length > 1 && (
             <Loading className="mx-auto mt-6" />
@@ -216,8 +243,6 @@ const EditorOutput = ({
    const [isClient, setIsClient] = useState(false)
    const [isEditing, setIsEditing] = useState(false)
    const [content, setContent] = useState(note.content ?? "")
-
-   const wrapperRef = useRef<HTMLDivElement>(null)
 
    const isOptimistic = note.id.startsWith("optimistic")
 
@@ -364,26 +389,32 @@ const EditorOutput = ({
          {(noteId || !isOptimistic) && (
             <div
                data-visible={isEditing}
-               className={`absolute z-[1] mt-4 flex scale-75 opacity-0 transition duration-300 group-hover:scale-100
-                group-hover:opacity-100 data-[visible=true]:scale-100 data-[visible=true]:opacity-100
-                max-lg:right-0 max-lg:translate-y-10 max-lg:group-hover:-translate-y-12 
-                max-lg:data-[visible=true]:-translate-y-12
+               className={`absolute z-[1] mt-4 flex scale-75 opacity-0 transition duration-300 
+                focus-within:scale-100
+                focus-within:opacity-100 
+                group-hover:scale-100
+                group-hover:opacity-100 
+                data-[visible=true]:scale-100 
+                data-[visible=true]:opacity-100
+                max-lg:right-0
+                max-lg:translate-y-10 
+                max-lg:focus-within:-translate-y-12 
+                max-lg:group-hover:-translate-y-12 
+                max-lg:data-[visible=true]:-translate-y-12 
                 lg:left-[calc(100%-48px)]
                 lg:-translate-x-10
-                lg:group-hover:translate-x-4 lg:data-[visible=true]:translate-x-4`}
+                lg:focus-within:translate-x-4 
+                lg:group-hover:translate-x-4 
+                lg:data-[visible=true]:translate-x-4`}
             >
                {isEditing ? (
                   <Button
-                     disabled={isUpdatePending}
+                     disabled={isDeletePending}
                      size={"icon"}
-                     className="rounded-r-none border-r-transparent text-foreground/60 hover:border-[#16a34a]/25 hover:text-[#16a34a]/60"
-                     onClick={() => onUpdate({ id: noteId })}
+                     className="rounded-r-none border-r-transparent text-foreground/60 hover:border"
+                     onClick={onCancelEditing}
                   >
-                     {isUpdatePending ? (
-                        <Loading />
-                     ) : (
-                        <CheckIcon className="size-6 fill-current" />
-                     )}
+                     <XMarkIcon className="size-7 fill-current" />
                   </Button>
                ) : (
                   <Button
@@ -405,12 +436,16 @@ const EditorOutput = ({
                )}
                {isEditing ? (
                   <Button
-                     disabled={isDeletePending}
+                     disabled={isUpdatePending}
                      size={"icon"}
-                     className="rounded-l-none border-l-transparent text-foreground/60 hover:border"
-                     onClick={onCancelEditing}
+                     className="rounded-l-none border-l-transparent text-foreground/60 hover:border-[#16a34a]/25 hover:text-[#16a34a]/60"
+                     onClick={() => onUpdate({ id: noteId })}
                   >
-                     <XMarkIcon className="size-7 fill-current" />
+                     {isUpdatePending ? (
+                        <Loading />
+                     ) : (
+                        <CheckIcon className="size-6 fill-current" />
+                     )}
                   </Button>
                ) : (
                   <Button
@@ -428,10 +463,7 @@ const EditorOutput = ({
                )}
             </div>
          )}
-         <div
-            className="group relative z-[2] overflow-hidden [&>*]:mt-4"
-            ref={wrapperRef}
-         >
+         <div className="group relative z-[2] overflow-hidden [&>*]:mt-4">
             {isEditing ? (
                <Editor
                   shouldSubmitOnEnter={false}
