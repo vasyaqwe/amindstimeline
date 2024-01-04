@@ -26,7 +26,7 @@ export default async function Index() {
    return (
       <>
          <Header />
-         <main className="mx-auto max-w-4xl px-5 pb-20 pt-4 md:pt-7">
+         <main className="mx-auto max-w-5xl px-5 pb-20 pt-4 md:pt-7">
             <CreateNoteForm />
             <NotesList initialNotes={notes as Note[]} />
          </main>

@@ -143,7 +143,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
          <LayoutGroup>
             <AnimatePresence initial={false}>
                {notes.length > 0 ? (
-                  notes?.map((group,groupIdx) => {
+                  notes?.map((group, groupIdx) => {
                      return (
                         <motion.div
                            layout={"position"}
@@ -169,7 +169,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
                                     opacity: { delay: 0.1 },
                                  },
                               }}
-                              className="right-full top-4 whitespace-nowrap text-right text-muted-foreground max-lg:text-center lg:absolute"
+                              className="right-full top-4 whitespace-nowrap text-right text-muted-foreground max-lg:text-center lg:absolute lg:right-[calc(100%-3rem)]"
                            >
                               {" "}
                               {group[0]}{" "}
@@ -214,7 +214,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
                                        },
                                     }}
                                     transition={transition}
-                                    className="group relative lg:px-12"
+                                    className="group relative lg:px-24"
                                  >
                                     <EditorOutput
                                        editingNoteId={editingNoteId}
@@ -363,6 +363,7 @@ const EditorOutput = ({
       onChange: (value) => setContent(value),
       value: content,
       shouldInitNewEditorOnReset: false,
+      shouldPreventEnterKeyDown: true,
    })
 
    function onCancelEditing() {
@@ -409,6 +410,8 @@ const EditorOutput = ({
    const noteId = isOptimistic && realNoteId ? realNoteId : note.id
 
    const isEditing = editingNoteId === note.id
+   console.log(optimisticNotesIdsMap)
+   console.log(isOptimistic)
 
    return (
       <>
@@ -428,10 +431,10 @@ const EditorOutput = ({
                 max-lg:group-hover:-translate-y-12 
                 max-lg:data-[visible=true]:-translate-y-12 
                 lg:left-[calc(100%-48px)]
-                lg:-translate-x-10
-                lg:focus-within:translate-x-4 
-                lg:group-hover:translate-x-4 
-                lg:data-[visible=true]:translate-x-4`}
+                lg:-translate-x-20
+                lg:focus-within:-translate-x-8 
+                lg:group-hover:-translate-x-8 
+                lg:data-[visible=true]:-translate-x-8`}
             >
                {isEditing ? (
                   <Button
@@ -494,10 +497,12 @@ const EditorOutput = ({
                )}
             </div>
          )}
-         <div className="group relative z-[2] overflow-hidden [&>*]:mt-4">
+         <div
+            id={note.id}
+            className="group relative z-[2] overflow-hidden [&>*]:mt-4"
+         >
             {isEditing ? (
                <Editor
-                  shouldSubmitOnEnter={false}
                   onSubmit={() => {
                      onUpdate({ id: noteId })
                   }}

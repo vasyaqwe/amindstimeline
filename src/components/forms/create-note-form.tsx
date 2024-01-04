@@ -86,7 +86,7 @@ export function CreateNoteForm() {
    })
 
    return (
-      <div className="border-b border-border/50 pb-7 lg:mx-12">
+      <div className="border-b border-border/50 pb-7 lg:mx-24">
          <Editor
             editor={editor}
             isPending={isPending}

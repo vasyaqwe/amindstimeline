@@ -36,14 +36,12 @@ type EditorProps = {
    onImageChange: (e: ChangeEvent<HTMLInputElement>) => void
    onSubmit: () => void
    isPending: boolean
-   shouldSubmitOnEnter?: boolean
 } & Omit<ComponentProps<"form">, "onChange">
 
 export const Editor = ({
    onSubmit,
    onImagePaste,
    onImageChange,
-   shouldSubmitOnEnter = true,
    editor,
    isPending,
    children,
@@ -86,8 +84,7 @@ export const Editor = ({
                !editor.state.doc.textContent.trim().length &&
                !editor.getJSON().content?.some((i) => i.type === "image")
 
-            if (isEmpty || isPending || isMobile() || !shouldSubmitOnEnter)
-               return
+            if (isEmpty || isPending || isMobile()) return
 
             if (
                e.key === "Enter" &&
