@@ -96,6 +96,7 @@ export const Editor = ({
                !editor.isActive("codeBlock") &&
                !isPending
             ) {
+               editor.commands.deleteCurrentNode()
                formRef.current?.requestSubmit()
             }
          }}

@@ -363,7 +363,6 @@ const EditorOutput = ({
       onChange: (value) => setContent(value),
       value: content,
       shouldInitNewEditorOnReset: false,
-      shouldPreventEnterKeyDown: true,
    })
 
    function onCancelEditing() {

@@ -39,7 +39,6 @@ type UseEditorArgs = {
    isPending: boolean
    onChange: (html: string) => void
    shouldInitNewEditorOnReset?: boolean
-   shouldPreventEnterKeyDown?: boolean
 }
 
 const ShiftEnterExtension = Extension.create({
@@ -53,19 +52,10 @@ const ShiftEnterExtension = Extension.create({
    },
 })
 
-const PreventEnter = Extension.create({
-   addKeyboardShortcuts(this) {
-      return {
-         Enter: () => true,
-      }
-   },
-})
-
 export function useEditor({
    value,
    isPending,
    shouldInitNewEditorOnReset = true,
-   shouldPreventEnterKeyDown = false,
    onChange,
 }: UseEditorArgs) {
    const [isMounted, setIsMounted] = useState(false)
@@ -83,7 +73,6 @@ export function useEditor({
             },
          }),
          Link,
-         shouldPreventEnterKeyDown ? PreventEnter : (null as never),
          ShiftEnterExtension,
          CodeBlockLowlight.configure({
             lowlight,
