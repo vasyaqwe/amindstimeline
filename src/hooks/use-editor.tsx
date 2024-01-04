@@ -93,7 +93,7 @@ export function useEditor({
          attributes: {
             id: nanoid(),
             class: cn(
-               "w-full p-4 min-h-[80px] md:min-h-[100px] focus:outline-none prose prose-invert"
+               "w-full p-5 min-h-[80px] md:min-h-[100px] focus:outline-none prose prose-invert"
             ),
          },
       },

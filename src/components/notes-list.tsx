@@ -4,7 +4,12 @@
 import { LayoutGroup, motion } from "framer-motion"
 import { type Note } from "@/types/supabase"
 import { Loading } from "@/components/ui/loading"
-import { NOTES_LIMIT, notesMutationKey, notesQueryKey } from "@/config"
+import {
+   NOTES_LIMIT,
+   notesMutationKey,
+   notesQueryKey,
+   transition,
+} from "@/config"
 import { useIntersection } from "@/hooks/use-intersection"
 import { createClient } from "@/lib/supabase/client"
 import {
@@ -16,13 +21,7 @@ import {
    type InfiniteData,
 } from "@tanstack/react-query"
 import { AnimatePresence } from "framer-motion"
-import {
-   type Dispatch,
-   type SetStateAction,
-   useEffect,
-   useState,
-   Fragment,
-} from "react"
+import { type Dispatch, type SetStateAction, useEffect, useState } from "react"
 import { chunk, cn, getFileNamesFromHTML, groupByDate } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -37,6 +36,8 @@ import { useEventListener } from "@/hooks/use-event-listener"
 import { useEditor } from "@/hooks/use-editor"
 import { toHtml } from "hast-util-to-html"
 import { common, createLowlight } from "lowlight"
+import { createPortal } from "react-dom"
+import { useIsClient } from "@/hooks/use-is-client"
 
 const lowlight = createLowlight(common)
 
@@ -65,6 +66,9 @@ async function fetchNotes({ pageParam = 1 }) {
 }
 
 export function NotesList({ initialNotes }: NotesListProps) {
+   const { isClient } = useIsClient()
+   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+
    const variables = useMutationState<QueryStatus>({
       filters: { mutationKey: notesMutationKey, status: "pending" },
       select: (mutation) => mutation.state.status as never,
@@ -122,18 +126,24 @@ export function NotesList({ initialNotes }: NotesListProps) {
       }
    }, [entry, hasNextPage, fetchNextPage])
 
-   const transition = {
-      type: "spring",
-      bounce: 0,
-      opacity: { duration: 0.25 },
-   }
-
    return (
-      <div className="pt-3">
+      <div className="lg:pt-3">
+         {isClient &&
+            editingNoteId &&
+            createPortal(
+               <div
+                  onClick={() => setEditingNoteId(null)}
+                  data-state={editingNoteId ? "visible" : "hidden"}
+                  aria-hidden={true}
+                  className={`fixed inset-0 z-[50] bg-background/50 backdrop-blur-sm data-[state=visible]:animate-in data-[state=hidden]:animate-out 
+         data-[state=hidden]:fade-out-0 data-[state=visible]:fade-in-0`}
+               />,
+               document.body
+            )}
          <LayoutGroup>
             <AnimatePresence initial={false}>
                {notes.length > 0 ? (
-                  notes?.map((group) => {
+                  notes?.map((group,groupIdx) => {
                      return (
                         <motion.div
                            layout={"position"}
@@ -163,7 +173,14 @@ export function NotesList({ initialNotes }: NotesListProps) {
                            >
                               {" "}
                               {group[0]}{" "}
-                              <span className="ml-1 text-lg text-accent">
+                              <span
+                                 className={cn(
+                                    "ml-1 inline-block text-lg text-accent",
+                                    groupIdx === 0
+                                       ? "max-lg:mt-4"
+                                       : "max-lg:mt-3"
+                                 )}
+                              >
                                  {group[1].length > NOTES_LIMIT - 1
                                     ? "15+"
                                     : group[1].length}
@@ -172,7 +189,12 @@ export function NotesList({ initialNotes }: NotesListProps) {
                            <AnimatePresence initial={false}>
                               {group[1].map((note, noteIdx) => (
                                  <motion.div
-                                    style={{ zIndex: noteIdx }}
+                                    style={{
+                                       zIndex:
+                                          note.id === editingNoteId
+                                             ? 999
+                                             : noteIdx,
+                                    }}
                                     key={note.id}
                                     exit={{
                                        height: 0,
@@ -195,6 +217,8 @@ export function NotesList({ initialNotes }: NotesListProps) {
                                     className="group relative lg:px-12"
                                  >
                                     <EditorOutput
+                                       editingNoteId={editingNoteId}
+                                       setEditingNoteId={setEditingNoteId}
                                        note={note}
                                        optimisticNotesIdsMap={
                                           optimisticNotesIdsMap
@@ -228,6 +252,8 @@ export function NotesList({ initialNotes }: NotesListProps) {
 
 type EditorOutputProps = {
    note: Note
+   editingNoteId: string | null
+   setEditingNoteId: Dispatch<SetStateAction<string | null>>
    setDeletedIds: Dispatch<SetStateAction<string[]>>
    optimisticNotesIdsMap: Record<string, string>
 }
@@ -235,6 +261,8 @@ type EditorOutputProps = {
 const EditorOutput = ({
    note,
    setDeletedIds,
+   setEditingNoteId,
+   editingNoteId,
    optimisticNotesIdsMap,
 }: EditorOutputProps) => {
    const supabase = createClient()
@@ -242,15 +270,10 @@ const EditorOutput = ({
    const [shouldAnimate, setShouldAnimate] = useState(
       note.id.startsWith("optimistic")
    )
-   const [isClient, setIsClient] = useState(false)
-   const [isEditing, setIsEditing] = useState(false)
+   const { isClient } = useIsClient()
    const [content, setContent] = useState(note.content ?? "")
 
    const isOptimistic = note.id.startsWith("optimistic")
-
-   useEffect(() => {
-      setIsClient(true)
-   }, [])
 
    const { mutate: onDelete, isPending: isDeletePending } = useMutation({
       mutationFn: async ({ id }: { id: string }) => {
@@ -267,7 +290,6 @@ const EditorOutput = ({
          }
       },
       onSuccess: async (deletedNote) => {
-         toast.success("Note deleted")
          setDeletedIds((prev) => [...prev, note.id])
 
          if (deletedNote) {
@@ -326,7 +348,6 @@ const EditorOutput = ({
             })
          }
 
-         toast.success("Note updated")
          onCancelEditing()
          await resetEditor()
          editor?.commands.setContent(updatedNote?.content ?? "")
@@ -346,7 +367,7 @@ const EditorOutput = ({
 
    function onCancelEditing() {
       editor?.commands.setContent(note.content)
-      setIsEditing(false)
+      setEditingNoteId(null)
       setContent(note.content ?? "")
    }
 
@@ -386,6 +407,9 @@ const EditorOutput = ({
    }
 
    const noteId = isOptimistic && realNoteId ? realNoteId : note.id
+
+   const isEditing = editingNoteId === note.id
+
    return (
       <>
          {(noteId || !isOptimistic) && (
@@ -411,37 +435,10 @@ const EditorOutput = ({
             >
                {isEditing ? (
                   <Button
-                     disabled={isDeletePending}
-                     size={"icon"}
-                     className="rounded-r-none border-r-transparent text-foreground/60 hover:border"
-                     onClick={onCancelEditing}
-                  >
-                     <XMarkIcon className="size-7 fill-current" />
-                  </Button>
-               ) : (
-                  <Button
-                     disabled={isDeletePending}
-                     size={"icon"}
-                     className="rounded-r-none border-r-transparent text-foreground/60 hover:border-destructive/25 hover:text-destructive/60"
-                     onClick={() =>
-                        onDelete({
-                           id: noteId,
-                        })
-                     }
-                  >
-                     {isDeletePending ? (
-                        <Loading />
-                     ) : (
-                        <TrashIcon className="size-5 fill-current" />
-                     )}
-                  </Button>
-               )}
-               {isEditing ? (
-                  <Button
                      disabled={isUpdatePending}
                      size={"icon"}
                      className={cn(
-                        "rounded-l-none border-l-transparent text-foreground/60",
+                        "rounded-r-none border-r-transparent text-foreground/60",
                         !isUpdatePending
                            ? "hover:border-[#16a34a]/25 hover:text-[#16a34a]/60"
                            : ""
@@ -457,15 +454,42 @@ const EditorOutput = ({
                ) : (
                   <Button
                      size={"icon"}
-                     className="rounded-l-none border-l-transparent text-foreground/60 hover:border"
+                     className="rounded-r-none border-r-transparent text-foreground/60 hover:border"
                      onClick={() => {
                         setShouldAnimate(false)
-                        setIsEditing(true)
+                        setEditingNoteId(note.id)
 
                         if (editor) editor.commands.focus("end")
                      }}
                   >
                      <PencilIcon className="size-5 fill-current" />
+                  </Button>
+               )}
+               {isEditing ? (
+                  <Button
+                     disabled={isDeletePending}
+                     size={"icon"}
+                     className="rounded-l-none border-l-transparent text-foreground/60 hover:border"
+                     onClick={onCancelEditing}
+                  >
+                     <XMarkIcon className="size-7 fill-current" />
+                  </Button>
+               ) : (
+                  <Button
+                     disabled={isDeletePending}
+                     size={"icon"}
+                     className="rounded-l-none border-l-transparent text-foreground/60 hover:border-destructive/25 hover:text-destructive/60"
+                     onClick={() =>
+                        onDelete({
+                           id: noteId,
+                        })
+                     }
+                  >
+                     {isDeletePending ? (
+                        <Loading />
+                     ) : (
+                        <TrashIcon className="size-5 fill-current" />
+                     )}
                   </Button>
                )}
             </div>

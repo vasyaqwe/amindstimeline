@@ -36,7 +36,6 @@ export function CreateNoteForm() {
          }
       },
       onSuccess: async () => {
-         toast.success("Note created")
          setContent("")
          await resetEditor()
       },
