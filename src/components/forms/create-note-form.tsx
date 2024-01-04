@@ -98,11 +98,14 @@ export function CreateNoteForm() {
          >
             {editor && (
                <Button
-                  disabled={editor.getText().length < 1}
+                  disabled={
+                     editor.getText().length < 1 &&
+                     !editor.getHTML().includes("img")
+                  }
                   variant={"ghost"}
                   size={"icon"}
                   aria-label="Create note"
-                  className="m-3 ml-auto"
+                  className="ml-auto"
                >
                   <PlusIcon className="size-8 opacity-60" />
                </Button>

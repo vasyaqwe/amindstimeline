@@ -38,6 +38,8 @@ import { toHtml } from "hast-util-to-html"
 import { common, createLowlight } from "lowlight"
 import { createPortal } from "react-dom"
 import { useIsClient } from "@/hooks/use-is-client"
+import { ImagePreviewDialog } from "@/components/dialogs/image-preview-dialog"
+import { useGlobalStore } from "@/stores/use-global-store"
 
 const lowlight = createLowlight(common)
 
@@ -67,6 +69,7 @@ async function fetchNotes({ pageParam = 1 }) {
 
 export function NotesList({ initialNotes }: NotesListProps) {
    const { isClient } = useIsClient()
+   const { previewImageSrc } = useGlobalStore()
    const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
 
    const variables = useMutationState<QueryStatus>({
@@ -128,6 +131,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
 
    return (
       <div className="lg:pt-3">
+         {isClient && <ImagePreviewDialog image={previewImageSrc} />}
          {isClient &&
             editingNoteId &&
             createPortal(
@@ -267,6 +271,7 @@ const EditorOutput = ({
 }: EditorOutputProps) => {
    const supabase = createClient()
    const queryClient = useQueryClient()
+   const { showDialog } = useGlobalStore()
    const [shouldAnimate, setShouldAnimate] = useState(
       note.id.startsWith("optimistic")
    )
@@ -512,6 +517,16 @@ const EditorOutput = ({
                />
             ) : (
                <div
+                  onClick={(e) => {
+                     const target = e.target as Element
+                     if (
+                        target instanceof HTMLImageElement &&
+                        target.classList.contains("editor-image")
+                     ) {
+                        useGlobalStore.setState({ previewImageSrc: target.src })
+                        showDialog("imagePreview")
+                     }
+                  }}
                   data-hovered={isEditing}
                   className={cn(
                      "group prose prose-invert max-w-full rounded-2xl border border-border/30 bg-muted p-5 transition-colors hover:border-border group-hover:border-border",

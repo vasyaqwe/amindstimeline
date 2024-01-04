@@ -53,7 +53,7 @@ export const Editor = ({
 
    if (!editor)
       return (
-         <Skeleton className="min-h-[190.5px] rounded-2xl md:min-h-[210.5px]" />
+         <Skeleton className="min-h-[164px] rounded-2xl md:min-h-[194.5px]" />
       )
 
    function isMobile() {
@@ -105,7 +105,11 @@ export const Editor = ({
             onSubmit()
          }}
       >
-         <div className="scroll-x flex overflow-x-auto p-2 pb-1">
+         <EditorContent
+            onPaste={onImagePaste}
+            editor={editor}
+         />
+         <div className="scroll-x flex items-end overflow-x-auto p-3 pt-1">
             <Hint
                delayDuration={isAnyTooltipVisible ? 0 : 350}
                onMouseOver={() => setIsAnyTooltipVisible(true)}
@@ -333,12 +337,8 @@ export const Editor = ({
                   <Redo className="size-[22px] opacity-60" />
                </button>
             </Hint>
+            {children}
          </div>
-         <EditorContent
-            onPaste={onImagePaste}
-            editor={editor}
-         />
-         {children}
       </form>
    )
 }
