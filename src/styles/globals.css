@@ -6,8 +6,8 @@
   :root {
     --avatar-size: 30px;
 
-    --background: 0 0% 5%;
-    --foreground: 0 0% 87%;
+    --background: 0 0% 6.5%;
+    --foreground: 0 0% 88%;
 
     --popover: 240 5% 10%;
     --popover-foreground: 0 0% 80%;
@@ -18,7 +18,7 @@
     --secondary: 260 4% 12%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 240 2% 7%;
+    --muted: 240 2% 9%;
     --muted-foreground: 240 2% 21%;
 
     --accent: 37 91% 75%;
@@ -28,7 +28,7 @@
     --destructive: 0 84.2% 48%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 240 2% 15%;
+    --border: 240 2% 20%;
     --input: 0 0% 25%;
     --ring: 0 0% 98%;
 
@@ -37,7 +37,7 @@
 }
 
 *::selection {
-  background-color: hsl(var(--accent));
+  background-color: hsl(var(--accent) / .8);
   color: hsl(var(--accent-foreground))
 }
 
@@ -77,6 +77,10 @@
   margin-bottom: .5em;
 }
 
+.prose a {
+  font-weight: 400;
+}
+
 .prose h2 {
   margin-top: .5em;
   margin-bottom: .5em;
@@ -84,6 +88,10 @@
 
 .prose li p {
   margin-block: .25em;
+}
+
+.prose p:empty {
+  height: 28px;
 }
 
 .prose>:only-child,

@@ -30,6 +30,14 @@ export default async function Index() {
             <CreateNoteForm />
             <NotesList initialNotes={notes as Note[]} />
          </main>
+         <div
+            aria-hidden={true}
+            style={{
+               backgroundImage:
+                  "linear-gradient(180deg, hsl(var(--background) / 0), hsl(var(--background)))",
+            }}
+            className="fixed bottom-0 left-1/2 z-[99] h-36 w-full -translate-x-1/2 lg:h-48"
+         />
       </>
    )
 }

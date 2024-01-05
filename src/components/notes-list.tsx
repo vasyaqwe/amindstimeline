@@ -535,7 +535,7 @@ const EditorOutput = ({
                   dangerouslySetInnerHTML={{
                      __html: content.includes("<code>")
                         ? parseCodeBlocks()
-                        : content?.replaceAll("<p></p>", "") ?? "",
+                        : content ?? "",
                   }}
                />
             )}
