@@ -22,20 +22,20 @@ export const ImagePreviewDialog = ({ image }: { image: string }) => {
                   animate={{ opacity: 1 }}
                   initial={{ opacity: 0 }}
                   exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-10 h-full w-full bg-black/60"
+                  className="fixed inset-0 z-[100] h-full w-full bg-muted/60 backdrop-blur-sm "
                />
                <motion.dialog
-                  className="fixed inset-0 z-10 bg-transparent"
+                  className="fixed inset-0 z-[100] bg-transparent"
                   onClick={() => closeDialog("imagePreview")}
                   animate={{ opacity: 1, scale: 1 }}
                   initial={{ opacity: 0, scale: 0.98 }}
                   exit={{ opacity: 0, scale: 0.98 }}
-                  transition={{ type: "just", duration: 0.25 }}
+                  transition={{ type: "just" }}
                   open
                >
                   <div className="mx-auto">
                      <img
-                        className="max-h-[90svh] rounded-lg"
+                        className="max-h-[90svh] rounded-lg border border-border/75"
                         src={image}
                         alt={""}
                      />

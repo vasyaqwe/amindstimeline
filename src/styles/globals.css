@@ -107,10 +107,6 @@
   margin-bottom: 0 !important;
 }
 
-.prose img {
-  max-width: 350px;
-}
-
 .prose a:hover {
   text-decoration: unset !important;
 }

@@ -45,6 +45,7 @@ export const Editor = ({
    editor,
    isPending,
    children,
+   className,
    ...props
 }: EditorProps) => {
    const [isAnyTooltipVisible, setIsAnyTooltipVisible] = useState(false)
@@ -76,8 +77,11 @@ export const Editor = ({
    return (
       <form
          ref={formRef}
-         className="flex flex-col rounded-2xl border border-border/60 bg-muted transition focus-within:border-border
-          focus-within:outline-none hover:border-border"
+         className={cn(
+            `flex min-h-[164px] flex-col rounded-2xl border border-border/60 bg-muted transition focus-within:border-border focus-within:outline-none
+          hover:border-border md:min-h-[194.5px]`,
+            className
+         )}
          {...props}
          onKeyDown={async (e) => {
             const isEmpty =
@@ -109,7 +113,7 @@ export const Editor = ({
             onPaste={onImagePaste}
             editor={editor}
          />
-         <div className="scroll-x flex items-end overflow-x-auto p-3 pt-1">
+         <div className="scroll-x mt-auto flex items-end overflow-x-auto p-3 pt-1">
             <Hint
                delayDuration={isAnyTooltipVisible ? 0 : 350}
                onMouseOver={() => setIsAnyTooltipVisible(true)}

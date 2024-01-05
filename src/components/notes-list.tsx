@@ -22,7 +22,13 @@ import {
 } from "@tanstack/react-query"
 import { AnimatePresence } from "framer-motion"
 import { type Dispatch, type SetStateAction, useEffect, useState } from "react"
-import { chunk, cn, getFileNamesFromHTML, groupByDate } from "@/lib/utils"
+import {
+   chunk,
+   cn,
+   getFileNamesFromHTML,
+   groupByDate,
+   replaceIfAppearsOnce,
+} from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
    CheckIcon,
@@ -132,18 +138,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
    return (
       <div className="lg:pt-3">
          {isClient && <ImagePreviewDialog image={previewImageSrc} />}
-         {isClient &&
-            editingNoteId &&
-            createPortal(
-               <div
-                  onClick={() => setEditingNoteId(null)}
-                  data-state={editingNoteId ? "visible" : "hidden"}
-                  aria-hidden={true}
-                  className={`fixed inset-0 z-[50] bg-background/50 backdrop-blur-sm data-[state=visible]:animate-in data-[state=hidden]:animate-out 
-         data-[state=hidden]:fade-out-0 data-[state=visible]:fade-in-0`}
-               />,
-               document.body
-            )}
+
          <LayoutGroup>
             <AnimatePresence initial={false}>
                {notes.length > 0 ? (
@@ -382,8 +377,10 @@ const EditorOutput = ({
 
    const realNoteId = optimisticNotesIdsMap[note.id]
 
+   const filteredContent = replaceIfAppearsOnce(content, "<p></p>", "")
+
    function parseCodeBlocks() {
-      const _content = content?.replaceAll("<p></p>", "") ?? ""
+      const _content = filteredContent
       if (!isClient) return _content
 
       const regex = /<code>([\s\S]*?)<\/code>/gm
@@ -419,6 +416,16 @@ const EditorOutput = ({
 
    return (
       <>
+         {isClient &&
+            editingNoteId === note.id &&
+            createPortal(
+               <div
+                  onClick={() => onCancelEditing()}
+                  aria-hidden={true}
+                  className={`fixed inset-0 z-[50] bg-muted/60 backdrop-blur-sm animate-in fade-in-0`}
+               />,
+               document.body
+            )}
          {(noteId || !isOptimistic) && (
             <div
                data-visible={isEditing}
@@ -507,6 +514,7 @@ const EditorOutput = ({
          >
             {isEditing ? (
                <Editor
+                  className="!min-h-[auto]"
                   onSubmit={() => {
                      onUpdate({ id: noteId })
                   }}
@@ -533,9 +541,9 @@ const EditorOutput = ({
                      shouldAnimate ? "animate-in-note" : ""
                   )}
                   dangerouslySetInnerHTML={{
-                     __html: content.includes("<code>")
+                     __html: filteredContent.includes("<code>")
                         ? parseCodeBlocks()
-                        : content ?? "",
+                        : content,
                   }}
                />
             )}

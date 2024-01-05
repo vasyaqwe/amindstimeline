@@ -36,7 +36,7 @@ export default async function Index() {
                backgroundImage:
                   "linear-gradient(180deg, hsl(var(--background) / 0), hsl(var(--background)))",
             }}
-            className="fixed bottom-0 left-1/2 z-[99] h-36 w-full -translate-x-1/2 lg:h-48"
+            className="pointer-events-none fixed bottom-0 left-1/2 z-[99] h-36 w-full -translate-x-1/2 lg:h-48"
          />
       </>
    )

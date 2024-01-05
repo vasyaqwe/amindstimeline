@@ -77,3 +77,21 @@ function getDisplayKey(note: Note) {
 
    return formatDate(note.created_at)
 }
+
+export function replaceIfAppearsOnce(
+   inputString: string,
+   searchString: string,
+   replacement: string
+) {
+   // Check if the substring appears only once
+   if (
+      inputString.indexOf(searchString) !==
+      inputString.lastIndexOf(searchString)
+   ) {
+      // If the substring appears more than once, return the original string
+      return inputString
+   } else {
+      // If the substring appears only once, replace it
+      return inputString.replace(searchString, replacement)
+   }
+}
