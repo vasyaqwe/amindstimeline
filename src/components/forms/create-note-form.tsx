@@ -42,6 +42,8 @@ export function CreateNoteForm() {
       onMutate: async ({ content, id }) => {
          await queryClient.cancelQueries({ queryKey: notesQueryKey })
 
+         editor?.commands.clearContent()
+
          const previousNotes = queryClient.getQueryData<InfiniteData<Note[]>>(
             notesQueryKey
          ) ?? { pageParams: [1], pages: [[]] }
@@ -63,7 +65,6 @@ export function CreateNoteForm() {
             ),
          })
 
-         editor?.commands.clearContent()
          return { previousNotes }
       },
       onError: (_err, _newTodo, context) => {

@@ -37,7 +37,7 @@
 }
 
 *::selection {
-  background-color: hsl(var(--accent) / .8);
+  background-color: hsl(var(--accent));
   color: hsl(var(--accent-foreground))
 }
 
@@ -63,6 +63,10 @@
 
 .prose {
   max-width: 100%;
+}
+
+.prose pre {
+  background-color: hsl(0 0% 4%);
 }
 
 .prose *:not(code):not(code *) {

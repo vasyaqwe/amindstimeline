@@ -62,6 +62,7 @@ export function useEditor({
    const [imagesToDeleteFromBucket, setImagesToDeleteFromBucket] = useState<
       string[]
    >([])
+
    const editor = _useEditor({
       extensions: [
          StarterKit.configure({

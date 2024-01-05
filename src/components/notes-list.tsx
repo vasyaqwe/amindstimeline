@@ -21,13 +21,19 @@ import {
    type InfiniteData,
 } from "@tanstack/react-query"
 import { AnimatePresence } from "framer-motion"
-import { type Dispatch, type SetStateAction, useEffect, useState } from "react"
+import {
+   type Dispatch,
+   type SetStateAction,
+   useEffect,
+   useState,
+   type MouseEvent,
+} from "react"
 import {
    chunk,
    cn,
    getFileNamesFromHTML,
    groupByDate,
-   replaceIfAppearsOnce,
+   parseCodeBlocks,
 } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -40,14 +46,10 @@ import { toast } from "sonner"
 import { Editor } from "@/components/ui/editor"
 import { useEventListener } from "@/hooks/use-event-listener"
 import { useEditor } from "@/hooks/use-editor"
-import { toHtml } from "hast-util-to-html"
-import { common, createLowlight } from "lowlight"
 import { createPortal } from "react-dom"
 import { useIsClient } from "@/hooks/use-is-client"
 import { ImagePreviewDialog } from "@/components/dialogs/image-preview-dialog"
 import { useGlobalStore } from "@/stores/use-global-store"
-
-const lowlight = createLowlight(common)
 
 type NotesListProps = {
    initialNotes: Note[]
@@ -267,10 +269,11 @@ const EditorOutput = ({
    const supabase = createClient()
    const queryClient = useQueryClient()
    const { showDialog } = useGlobalStore()
+   const { isClient } = useIsClient()
+
    const [shouldAnimate, setShouldAnimate] = useState(
       note.id.startsWith("optimistic")
    )
-   const { isClient } = useIsClient()
    const [content, setContent] = useState(note.content ?? "")
 
    const isOptimistic = note.id.startsWith("optimistic")
@@ -322,7 +325,7 @@ const EditorOutput = ({
          }
       },
       onSuccess: async (updatedNote) => {
-         //update note's content (can't update everything with invalidateQueries because framer motion animation will trigger)
+         //update note's content (can't update everything with invalidateQueries because framer motion animation will trigger due to id update)
          const previousNotes =
             queryClient.getQueryData<InfiniteData<Note[]>>(notesQueryKey)
          if (updatedNote && previousNotes) {
@@ -334,7 +337,8 @@ const EditorOutput = ({
 
             const updatedNotes = previousNotes.pages.flatMap((notes) =>
                notes.map((n) =>
-                  n.id === _optimisticNotesIdsMap[updatedNote.id]
+                  n.id ===
+                  (_optimisticNotesIdsMap[updatedNote.id] ?? updatedNote.id)
                      ? {
                           ...n,
                           content: updatedNote?.content,
@@ -342,6 +346,7 @@ const EditorOutput = ({
                      : n
                )
             )
+
             queryClient.setQueryData<InfiniteData<Note[]>>(notesQueryKey, {
                ...previousNotes,
                pages: chunk(updatedNotes, NOTES_LIMIT),
@@ -371,48 +376,28 @@ const EditorOutput = ({
       setContent(note.content ?? "")
    }
 
+   function onEditorOutputClick(e: MouseEvent<HTMLDivElement>) {
+      const target = e.target as Element
+      if (
+         target instanceof HTMLImageElement &&
+         target.classList.contains("editor-image")
+      ) {
+         useGlobalStore.setState({
+            previewImageSrc: target.src,
+         })
+         showDialog("imagePreview")
+      }
+   }
+
    useEventListener("keydown", (e) => {
       if (e.key === "Escape") onCancelEditing()
    })
 
    const realNoteId = optimisticNotesIdsMap[note.id]
 
-   const filteredContent = replaceIfAppearsOnce(content, "<p></p>", "")
-
-   function parseCodeBlocks() {
-      const _content = filteredContent
-      if (!isClient) return _content
-
-      const regex = /<code>([\s\S]*?)<\/code>/gm
-      let m
-      let outputHtml = _content
-      while ((m = regex.exec(_content)) !== null) {
-         // Extract the unescaped innerText of the <code> tag
-         const tempDiv = document.createElement("div")
-         tempDiv.innerHTML = m[0]
-         const codeText = (tempDiv?.firstChild as HTMLElement)?.innerText
-
-         // Replace the <code> block with the processed version
-         const processedCodeText = toHtml(lowlight.highlightAuto(codeText))
-
-         const newCodeTag = `<code>${processedCodeText}</code>`
-         outputHtml =
-            outputHtml.substring(0, m.index) +
-            newCodeTag +
-            outputHtml.substring(regex.lastIndex)
-         regex.lastIndex += newCodeTag.length - m[0].length
-
-         // Replace escaped characters back to "<" and ">"
-         outputHtml = outputHtml.replace(/</g, "<").replace(/&gt;/g, ">")
-      }
-      return outputHtml
-   }
-
    const noteId = isOptimistic && realNoteId ? realNoteId : note.id
 
    const isEditing = editingNoteId === note.id
-   console.log(optimisticNotesIdsMap)
-   console.log(isOptimistic)
 
    return (
       <>
@@ -510,43 +495,39 @@ const EditorOutput = ({
          )}
          <div
             id={note.id}
-            className="group relative z-[2] overflow-hidden [&>*]:mt-4"
+            className="group relative z-[2]"
          >
-            {isEditing ? (
-               <Editor
-                  className="!min-h-[auto]"
-                  onSubmit={() => {
-                     onUpdate({ id: noteId })
-                  }}
-                  editor={editor}
-                  isPending={isUpdatePending}
-                  onImageChange={onImageChange}
-                  onImagePaste={onImagePaste}
-               />
-            ) : (
-               <div
-                  onClick={(e) => {
-                     const target = e.target as Element
-                     if (
-                        target instanceof HTMLImageElement &&
-                        target.classList.contains("editor-image")
-                     ) {
-                        useGlobalStore.setState({ previewImageSrc: target.src })
-                        showDialog("imagePreview")
-                     }
-                  }}
-                  data-hovered={isEditing}
-                  className={cn(
-                     "group prose prose-invert max-w-full rounded-2xl border border-border/30 bg-muted p-5 transition-colors hover:border-border group-hover:border-border",
-                     shouldAnimate ? "animate-in-note" : ""
-                  )}
-                  dangerouslySetInnerHTML={{
-                     __html: filteredContent.includes("<code>")
-                        ? parseCodeBlocks()
-                        : content,
-                  }}
-               />
-            )}
+            <div className="overflow-hidden [&>*]:mt-4">
+               {isEditing ? (
+                  <Editor
+                     toolbarStyle="floating"
+                     className="!min-h-[auto]"
+                     onSubmit={() => {
+                        onUpdate({ id: noteId })
+                     }}
+                     editor={editor}
+                     isPending={isUpdatePending}
+                     onImageChange={onImageChange}
+                     onImagePaste={onImagePaste}
+                  />
+               ) : (
+                  <div
+                     onClick={onEditorOutputClick}
+                     data-hovered={isEditing}
+                     className={cn(
+                        "group prose prose-invert max-w-full rounded-2xl border border-border/30 bg-muted p-5 transition-colors hover:border-border group-hover:border-border",
+                        shouldAnimate ? "animate-in-note" : ""
+                     )}
+                     dangerouslySetInnerHTML={{
+                        __html: content.includes("<code>")
+                           ? isClient
+                              ? parseCodeBlocks({ content })
+                              : content
+                           : content,
+                     }}
+                  />
+               )}
+            </div>
          </div>
       </>
    )

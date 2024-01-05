@@ -1,6 +1,8 @@
 import { type Note } from "@/types/supabase"
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { toHtml } from "hast-util-to-html"
+import { common, createLowlight } from "lowlight"
 
 export function cn(...inputs: ClassValue[]) {
    return twMerge(clsx(inputs))
@@ -78,20 +80,47 @@ function getDisplayKey(note: Note) {
    return formatDate(note.created_at)
 }
 
-export function replaceIfAppearsOnce(
-   inputString: string,
-   searchString: string,
-   replacement: string
-) {
-   // Check if the substring appears only once
-   if (
-      inputString.indexOf(searchString) !==
-      inputString.lastIndexOf(searchString)
-   ) {
-      // If the substring appears more than once, return the original string
-      return inputString
-   } else {
-      // If the substring appears only once, replace it
-      return inputString.replace(searchString, replacement)
+export function isMobile() {
+   if (typeof window === "undefined") return false
+
+   // Check for touch screen capability
+   const hasTouchScreen =
+      "ontouchstart" in window || navigator.maxTouchPoints > 0
+
+   // Check the user agent string
+   const userAgent = navigator.userAgent.toLowerCase()
+   const isMobileUserAgent =
+      /mobile|android|touch|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(
+         userAgent
+      )
+
+   return hasTouchScreen && isMobileUserAgent
+}
+
+export function parseCodeBlocks({ content }: { content: string }) {
+   const lowlight = createLowlight(common)
+
+   const regex = /<code>([\s\S]*?)<\/code>/gm
+   let m
+   let outputHtml = content
+   while ((m = regex.exec(content)) !== null) {
+      // Extract the unescaped innerText of the <code> tag
+      const tempDiv = document.createElement("div")
+      tempDiv.innerHTML = m[0]
+      const codeText = (tempDiv?.firstChild as HTMLElement)?.innerText
+
+      // Replace the <code> block with the processed version
+      const processedCodeText = toHtml(lowlight.highlightAuto(codeText))
+
+      const newCodeTag = `<code>${processedCodeText}</code>`
+      outputHtml =
+         outputHtml.substring(0, m.index) +
+         newCodeTag +
+         outputHtml.substring(regex.lastIndex)
+      regex.lastIndex += newCodeTag.length - m[0].length
+
+      // Replace escaped characters back to "<" and ">"
+      outputHtml = outputHtml.replace(/</g, "<").replace(/&gt;/g, ">")
    }
+   return outputHtml
 }

@@ -2,7 +2,7 @@
 
 import { EditorContent, type Editor as CoreEditor } from "@tiptap/react"
 import { Toggle, toggleVariants } from "@/components/ui/toggle"
-import { cn } from "@/lib/utils"
+import { cn, isMobile } from "@/lib/utils"
 import { Hint } from "@/components/hint"
 import {
    useState,
@@ -28,6 +28,7 @@ import {
 } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
+import { flushSync } from "react-dom"
 
 type EditorProps = {
    className?: string
@@ -36,6 +37,7 @@ type EditorProps = {
    onImageChange: (e: ChangeEvent<HTMLInputElement>) => void
    onSubmit: () => void
    isPending: boolean
+   toolbarStyle?: "floating" | "default"
 } & Omit<ComponentProps<"form">, "onChange">
 
 export const Editor = ({
@@ -46,6 +48,7 @@ export const Editor = ({
    isPending,
    children,
    className,
+   toolbarStyle = "default",
    ...props
 }: EditorProps) => {
    const [isAnyTooltipVisible, setIsAnyTooltipVisible] = useState(false)
@@ -56,23 +59,6 @@ export const Editor = ({
       return (
          <Skeleton className="min-h-[164px] rounded-2xl md:min-h-[194.5px]" />
       )
-
-   function isMobile() {
-      if (typeof window === "undefined") return false
-
-      // Check for touch screen capability
-      const hasTouchScreen =
-         "ontouchstart" in window || navigator.maxTouchPoints > 0
-
-      // Check the user agent string
-      const userAgent = navigator.userAgent.toLowerCase()
-      const isMobileUserAgent =
-         /mobile|android|touch|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(
-            userAgent
-         )
-
-      return hasTouchScreen && isMobileUserAgent
-   }
 
    return (
       <form
@@ -100,7 +86,7 @@ export const Editor = ({
                !editor.isActive("codeBlock") &&
                !isPending
             ) {
-               editor.commands.deleteCurrentNode()
+               flushSync(() => editor.commands.deleteCurrentNode())
                formRef.current?.requestSubmit()
             }
          }}
@@ -113,7 +99,14 @@ export const Editor = ({
             onPaste={onImagePaste}
             editor={editor}
          />
-         <div className="scroll-x mt-auto flex items-end overflow-x-auto p-3 pt-1">
+         <div
+            className={cn(
+               "scroll-x mt-auto flex items-end overflow-x-auto",
+               toolbarStyle === "floating"
+                  ? "absolute bottom-full rounded-2xl border border-border bg-muted p-2"
+                  : "p-3 pt-1"
+            )}
+         >
             <Hint
                delayDuration={isAnyTooltipVisible ? 0 : 350}
                onMouseOver={() => setIsAnyTooltipVisible(true)}
