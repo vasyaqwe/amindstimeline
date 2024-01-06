@@ -428,9 +428,9 @@ const EditorOutput = ({
                 max-lg:data-[visible=true]:-translate-y-12 
                 lg:left-[calc(100%-48px)]
                 lg:-translate-x-20
-                lg:focus-within:-translate-x-8 
-                lg:group-hover:-translate-x-8 
-                lg:data-[visible=true]:-translate-x-8`}
+                lg:focus-within:-translate-x-9 
+                lg:group-hover:-translate-x-9 
+                lg:data-[visible=true]:-translate-x-9`}
             >
                {isEditing ? (
                   <Button

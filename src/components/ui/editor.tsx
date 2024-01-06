@@ -101,239 +101,246 @@ export const Editor = ({
          />
          <div
             className={cn(
-               "scroll-x mt-auto flex items-end overflow-x-auto",
+               "mt-auto flex items-end",
                toolbarStyle === "floating"
-                  ? "absolute bottom-full rounded-2xl border border-border bg-muted p-2"
-                  : "p-3 pt-1"
+                  ? "absolute -bottom-[68px] left-0 w-full rounded-2xl border border-border bg-muted p-2"
+                  : " p-3 pt-1 "
             )}
          >
-            <Hint
-               delayDuration={isAnyTooltipVisible ? 0 : 350}
-               onMouseOver={() => setIsAnyTooltipVisible(true)}
-               onMouseLeave={() => setIsAnyTooltipVisible(false)}
-               className="pr-0.5"
-               content={"Heading (level 1)"}
+            <div
+               className={cn(
+                  "scroll-x flex overflow-x-auto",
+                  toolbarStyle === "floating" ? "" : "max-md:max-w-[75%]"
+               )}
             >
-               <Toggle
-                  size={"sm"}
+               <Hint
+                  delayDuration={isAnyTooltipVisible ? 0 : 350}
+                  onMouseOver={() => setIsAnyTooltipVisible(true)}
+                  onMouseLeave={() => setIsAnyTooltipVisible(false)}
+                  className="pr-0.5"
                   content={"Heading (level 1)"}
-                  pressed={editor.isActive("heading", { level: 1 })}
-                  onPressedChange={() =>
-                     editor.chain().focus().toggleHeading({ level: 1 }).run()
-                  }
                >
-                  <Heading1 className="size-[22px] opacity-60" />
-               </Toggle>
-            </Hint>
-            <Hint
-               delayDuration={isAnyTooltipVisible ? 0 : 350}
-               onMouseOver={() => setIsAnyTooltipVisible(true)}
-               onMouseLeave={() => setIsAnyTooltipVisible(false)}
-               content={"Heading (level 2)"}
-               className="px-0.5"
-            >
-               <Toggle
-                  size={"sm"}
-                  pressed={editor.isActive("heading", { level: 2 })}
-                  onPressedChange={() =>
-                     editor.chain().focus().toggleHeading({ level: 2 }).run()
-                  }
-               >
-                  <Heading2 className="size-[22px] opacity-60" />
-               </Toggle>
-            </Hint>
-            <Hint
-               onMouseOver={() => setIsAnyTooltipVisible(true)}
-               onMouseLeave={() => setIsAnyTooltipVisible(false)}
-               className="px-0.5"
-               delayDuration={isAnyTooltipVisible ? 0 : 350}
-               content={"Bold"}
-            >
-               <Toggle
+                  <Toggle
+                     size={"sm"}
+                     content={"Heading (level 1)"}
+                     pressed={editor.isActive("heading", { level: 1 })}
+                     onPressedChange={() =>
+                        editor.chain().focus().toggleHeading({ level: 1 }).run()
+                     }
+                  >
+                     <Heading1 className="size-[22px] opacity-60" />
+                  </Toggle>
+               </Hint>
+               <Hint
+                  delayDuration={isAnyTooltipVisible ? 0 : 350}
                   onMouseOver={() => setIsAnyTooltipVisible(true)}
                   onMouseLeave={() => setIsAnyTooltipVisible(false)}
-                  size={"sm"}
-                  pressed={editor.isActive("bold")}
-                  onPressedChange={() =>
-                     editor.chain().focus().toggleBold().run()
-                  }
+                  content={"Heading (level 2)"}
+                  className="px-0.5"
                >
-                  <Bold className="size-[22px] opacity-60" />
-               </Toggle>
-            </Hint>
-            <Hint
-               onMouseOver={() => setIsAnyTooltipVisible(true)}
-               onMouseLeave={() => setIsAnyTooltipVisible(false)}
-               className="px-0.5"
-               delayDuration={isAnyTooltipVisible ? 0 : 350}
-               content={"Italic"}
-            >
-               <Toggle
+                  <Toggle
+                     size={"sm"}
+                     pressed={editor.isActive("heading", { level: 2 })}
+                     onPressedChange={() =>
+                        editor.chain().focus().toggleHeading({ level: 2 }).run()
+                     }
+                  >
+                     <Heading2 className="size-[22px] opacity-60" />
+                  </Toggle>
+               </Hint>
+               <Hint
                   onMouseOver={() => setIsAnyTooltipVisible(true)}
                   onMouseLeave={() => setIsAnyTooltipVisible(false)}
-                  size={"sm"}
-                  pressed={editor.isActive("italic")}
-                  onPressedChange={() =>
-                     editor.chain().focus().toggleItalic().run()
-                  }
+                  className="px-0.5"
+                  delayDuration={isAnyTooltipVisible ? 0 : 350}
+                  content={"Bold"}
                >
-                  <Italic className="size-[22px] opacity-60" />
-               </Toggle>
-            </Hint>
-            <Hint
-               onMouseOver={() => setIsAnyTooltipVisible(true)}
-               onMouseLeave={() => setIsAnyTooltipVisible(false)}
-               className="px-0.5"
-               delayDuration={isAnyTooltipVisible ? 0 : 350}
-               content={"Strikethrough"}
-            >
-               <Toggle
+                  <Toggle
+                     onMouseOver={() => setIsAnyTooltipVisible(true)}
+                     onMouseLeave={() => setIsAnyTooltipVisible(false)}
+                     size={"sm"}
+                     pressed={editor.isActive("bold")}
+                     onPressedChange={() =>
+                        editor.chain().focus().toggleBold().run()
+                     }
+                  >
+                     <Bold className="size-[22px] opacity-60" />
+                  </Toggle>
+               </Hint>
+               <Hint
                   onMouseOver={() => setIsAnyTooltipVisible(true)}
                   onMouseLeave={() => setIsAnyTooltipVisible(false)}
-                  size={"sm"}
-                  pressed={editor.isActive("strike")}
-                  onPressedChange={() =>
-                     editor.chain().focus().toggleStrike().run()
-                  }
+                  className="px-0.5"
+                  delayDuration={isAnyTooltipVisible ? 0 : 350}
+                  content={"Italic"}
                >
-                  <Strikethrough className="size-[22px] opacity-60" />
-               </Toggle>
-            </Hint>
-            <Hint
-               onMouseOver={() => setIsAnyTooltipVisible(true)}
-               onMouseLeave={() => setIsAnyTooltipVisible(false)}
-               className="px-0.5"
-               delayDuration={isAnyTooltipVisible ? 0 : 350}
-               content={"Ordered list"}
-            >
-               <Toggle
+                  <Toggle
+                     onMouseOver={() => setIsAnyTooltipVisible(true)}
+                     onMouseLeave={() => setIsAnyTooltipVisible(false)}
+                     size={"sm"}
+                     pressed={editor.isActive("italic")}
+                     onPressedChange={() =>
+                        editor.chain().focus().toggleItalic().run()
+                     }
+                  >
+                     <Italic className="size-[22px] opacity-60" />
+                  </Toggle>
+               </Hint>
+               <Hint
                   onMouseOver={() => setIsAnyTooltipVisible(true)}
                   onMouseLeave={() => setIsAnyTooltipVisible(false)}
-                  size={"sm"}
-                  pressed={editor.isActive("orderedList")}
-                  onPressedChange={() =>
-                     editor.chain().focus().toggleOrderedList().run()
-                  }
+                  className="px-0.5"
+                  delayDuration={isAnyTooltipVisible ? 0 : 350}
+                  content={"Strikethrough"}
                >
-                  <ListOrdered className="size-[22px] opacity-60" />
-               </Toggle>
-            </Hint>
-            <Hint
-               onMouseOver={() => setIsAnyTooltipVisible(true)}
-               onMouseLeave={() => setIsAnyTooltipVisible(false)}
-               className="px-0.5"
-               delayDuration={isAnyTooltipVisible ? 0 : 350}
-               content={"Unordered list"}
-            >
-               <Toggle
+                  <Toggle
+                     onMouseOver={() => setIsAnyTooltipVisible(true)}
+                     onMouseLeave={() => setIsAnyTooltipVisible(false)}
+                     size={"sm"}
+                     pressed={editor.isActive("strike")}
+                     onPressedChange={() =>
+                        editor.chain().focus().toggleStrike().run()
+                     }
+                  >
+                     <Strikethrough className="size-[22px] opacity-60" />
+                  </Toggle>
+               </Hint>
+               <Hint
                   onMouseOver={() => setIsAnyTooltipVisible(true)}
                   onMouseLeave={() => setIsAnyTooltipVisible(false)}
-                  size={"sm"}
-                  pressed={editor.isActive("bulletList")}
-                  onPressedChange={() =>
-                     editor.chain().focus().toggleBulletList().run()
-                  }
+                  className="px-0.5"
+                  delayDuration={isAnyTooltipVisible ? 0 : 350}
+                  content={"Ordered list"}
                >
-                  <List className="size-[22px] opacity-60" />
-               </Toggle>
-            </Hint>
-            <Hint
-               onMouseOver={() => setIsAnyTooltipVisible(true)}
-               onMouseLeave={() => setIsAnyTooltipVisible(false)}
-               className="px-0.5"
-               delayDuration={isAnyTooltipVisible ? 0 : 350}
-               content={"Image"}
-            >
-               <FileButton
+                  <Toggle
+                     onMouseOver={() => setIsAnyTooltipVisible(true)}
+                     onMouseLeave={() => setIsAnyTooltipVisible(false)}
+                     size={"sm"}
+                     pressed={editor.isActive("orderedList")}
+                     onPressedChange={() =>
+                        editor.chain().focus().toggleOrderedList().run()
+                     }
+                  >
+                     <ListOrdered className="size-[22px] opacity-60" />
+                  </Toggle>
+               </Hint>
+               <Hint
                   onMouseOver={() => setIsAnyTooltipVisible(true)}
                   onMouseLeave={() => setIsAnyTooltipVisible(false)}
-                  className={cn("text-foreground")}
-                  onChange={onImageChange}
-                  accept="image/*"
+                  className="px-0.5"
+                  delayDuration={isAnyTooltipVisible ? 0 : 350}
+                  content={"Unordered list"}
                >
-                  <ImageIcon className="size-[22px] opacity-60" />
-               </FileButton>
-            </Hint>
-            <Hint
-               onMouseOver={() => setIsAnyTooltipVisible(true)}
-               onMouseLeave={() => setIsAnyTooltipVisible(false)}
-               className="px-0.5"
-               delayDuration={isAnyTooltipVisible ? 0 : 350}
-               content={"Code"}
-            >
-               <Toggle
+                  <Toggle
+                     onMouseOver={() => setIsAnyTooltipVisible(true)}
+                     onMouseLeave={() => setIsAnyTooltipVisible(false)}
+                     size={"sm"}
+                     pressed={editor.isActive("bulletList")}
+                     onPressedChange={() =>
+                        editor.chain().focus().toggleBulletList().run()
+                     }
+                  >
+                     <List className="size-[22px] opacity-60" />
+                  </Toggle>
+               </Hint>
+               <Hint
                   onMouseOver={() => setIsAnyTooltipVisible(true)}
                   onMouseLeave={() => setIsAnyTooltipVisible(false)}
-                  size={"sm"}
-                  pressed={editor.isActive("code")}
-                  onPressedChange={() =>
-                     editor.chain().focus().toggleCode().run()
-                  }
+                  className="px-0.5"
+                  delayDuration={isAnyTooltipVisible ? 0 : 350}
+                  content={"Image"}
                >
-                  <Code2 className="size-[22px] opacity-60" />
-               </Toggle>
-            </Hint>
-            <Hint
-               onMouseOver={() => setIsAnyTooltipVisible(true)}
-               onMouseLeave={() => setIsAnyTooltipVisible(false)}
-               className="px-0.5"
-               delayDuration={isAnyTooltipVisible ? 0 : 350}
-               content={"Code block"}
-            >
-               <Toggle
+                  <FileButton
+                     onMouseOver={() => setIsAnyTooltipVisible(true)}
+                     onMouseLeave={() => setIsAnyTooltipVisible(false)}
+                     className={cn("text-foreground")}
+                     onChange={onImageChange}
+                     accept="image/*"
+                  >
+                     <ImageIcon className="size-[22px] opacity-60" />
+                  </FileButton>
+               </Hint>
+               <Hint
                   onMouseOver={() => setIsAnyTooltipVisible(true)}
                   onMouseLeave={() => setIsAnyTooltipVisible(false)}
-                  size={"sm"}
-                  pressed={editor.isActive("codeBlock")}
-                  onPressedChange={() =>
-                     editor.chain().focus().toggleCodeBlock().run()
-                  }
+                  className="px-0.5"
+                  delayDuration={isAnyTooltipVisible ? 0 : 350}
+                  content={"Code"}
                >
-                  <SquareCode className="size-[22px] opacity-60" />
-               </Toggle>
-            </Hint>
-            <Hint
-               onMouseOver={() => setIsAnyTooltipVisible(true)}
-               onMouseLeave={() => setIsAnyTooltipVisible(false)}
-               className="px-0.5"
-               delayDuration={isAnyTooltipVisible ? 0 : 350}
-               content={"Undo"}
-            >
-               <button
-                  type="button"
+                  <Toggle
+                     onMouseOver={() => setIsAnyTooltipVisible(true)}
+                     onMouseLeave={() => setIsAnyTooltipVisible(false)}
+                     size={"sm"}
+                     pressed={editor.isActive("code")}
+                     onPressedChange={() =>
+                        editor.chain().focus().toggleCode().run()
+                     }
+                  >
+                     <Code2 className="size-[22px] opacity-60" />
+                  </Toggle>
+               </Hint>
+               <Hint
                   onMouseOver={() => setIsAnyTooltipVisible(true)}
                   onMouseLeave={() => setIsAnyTooltipVisible(false)}
-                  className={cn(
-                     toggleVariants({ size: "sm" }),
-                     "text-foreground"
-                  )}
-                  disabled={!editor.can().undo()}
-                  onClick={() => editor.chain().focus().undo().run()}
+                  className="px-0.5"
+                  delayDuration={isAnyTooltipVisible ? 0 : 350}
+                  content={"Code block"}
                >
-                  <Undo className="size-[22px] opacity-60" />
-               </button>
-            </Hint>
-            <Hint
-               onMouseOver={() => setIsAnyTooltipVisible(true)}
-               onMouseLeave={() => setIsAnyTooltipVisible(false)}
-               className="px-0.5"
-               delayDuration={isAnyTooltipVisible ? 0 : 350}
-               content={"Redo"}
-            >
-               <button
-                  type="button"
+                  <Toggle
+                     onMouseOver={() => setIsAnyTooltipVisible(true)}
+                     onMouseLeave={() => setIsAnyTooltipVisible(false)}
+                     size={"sm"}
+                     pressed={editor.isActive("codeBlock")}
+                     onPressedChange={() =>
+                        editor.chain().focus().toggleCodeBlock().run()
+                     }
+                  >
+                     <SquareCode className="size-[22px] opacity-60" />
+                  </Toggle>
+               </Hint>
+               <Hint
                   onMouseOver={() => setIsAnyTooltipVisible(true)}
                   onMouseLeave={() => setIsAnyTooltipVisible(false)}
-                  className={cn(
-                     toggleVariants({ size: "sm" }),
-                     "text-foreground"
-                  )}
-                  disabled={!editor.can().redo()}
-                  onClick={() => editor.chain().focus().redo().run()}
+                  className="px-0.5"
+                  delayDuration={isAnyTooltipVisible ? 0 : 350}
+                  content={"Undo"}
                >
-                  <Redo className="size-[22px] opacity-60" />
-               </button>
-            </Hint>
+                  <button
+                     type="button"
+                     onMouseOver={() => setIsAnyTooltipVisible(true)}
+                     onMouseLeave={() => setIsAnyTooltipVisible(false)}
+                     className={cn(
+                        toggleVariants({ size: "sm" }),
+                        "text-foreground"
+                     )}
+                     disabled={!editor.can().undo()}
+                     onClick={() => editor.chain().focus().undo().run()}
+                  >
+                     <Undo className="size-[22px] opacity-60" />
+                  </button>
+               </Hint>
+               <Hint
+                  onMouseOver={() => setIsAnyTooltipVisible(true)}
+                  onMouseLeave={() => setIsAnyTooltipVisible(false)}
+                  className="px-0.5"
+                  delayDuration={isAnyTooltipVisible ? 0 : 350}
+                  content={"Redo"}
+               >
+                  <button
+                     type="button"
+                     onMouseOver={() => setIsAnyTooltipVisible(true)}
+                     onMouseLeave={() => setIsAnyTooltipVisible(false)}
+                     className={cn(
+                        toggleVariants({ size: "sm" }),
+                        "text-foreground"
+                     )}
+                     disabled={!editor.can().redo()}
+                     onClick={() => editor.chain().focus().redo().run()}
+                  >
+                     <Redo className="size-[22px] opacity-60" />
+                  </button>
+               </Hint>
+            </div>
             {children}
          </div>
       </form>
