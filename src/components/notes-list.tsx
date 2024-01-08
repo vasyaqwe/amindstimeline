@@ -35,6 +35,7 @@ import {
    getFileNamesFromHTML,
    groupByDate,
    parseCodeBlocks,
+   reverseKeysWithValues,
 } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -91,11 +92,12 @@ export function NotesList({ initialNotes }: NotesListProps) {
    })
 
    const [deletedIds, setDeletedIds] = useState<string[]>([])
+
+   //Record<optimisticId, realId>, which is used to retrieve real id where needed
    const [optimisticNotesIdsMap, setOptimisticNotesIdsMap] = useState<
       Record<string, string>
    >({})
-
-   //this weird trick is required to make framer motion work with tanstack query
+   //this weird trick is required to make framer motion work with query invalidation (id changes from optimistic to real > animation triggers)
    useEffect(() => {
       setOptimisticNotesIdsMap(() =>
          createdNotes.reduce((acc: Record<string, string>, curr) => {
@@ -321,19 +323,19 @@ const EditorOutput = ({
       },
       onSuccess: async (updatedNote) => {
          //update note's content (can't update everything with invalidateQueries because framer motion animation will trigger due to id update)
-         const previousNotes =
-            queryClient.getQueryData<InfiniteData<Note[]>>(notesQueryKey)
-         if (updatedNote && previousNotes) {
-            const _optimisticNotesIdsMap: Record<string, string> =
-               Object.entries(optimisticNotesIdsMap).reduce(
-                  (acc, [key, value]) => ({ ...acc, [value]: key }),
-                  {}
-               )
+         const previousNotes = queryClient.getQueryData<InfiniteData<Note[]>>(
+            notesQueryKey
+         ) ?? { pageParams: [1], pages: [[]] }
+
+         if (updatedNote) {
+            const reversedOptimisticNotesIdsMap: Record<string, string> =
+               reverseKeysWithValues(optimisticNotesIdsMap)
 
             const updatedNotes = previousNotes.pages.flatMap((notes) =>
                notes.map((n) =>
                   n.id ===
-                  (_optimisticNotesIdsMap[updatedNote.id] ?? updatedNote.id)
+                  (reversedOptimisticNotesIdsMap[updatedNote.id] ??
+                     updatedNote.id)
                      ? {
                           ...n,
                           content: updatedNote?.content,
@@ -388,9 +390,9 @@ const EditorOutput = ({
       if (e.key === "Escape") onCancelEditing()
    })
 
-   const realNoteId = optimisticNotesIdsMap[note.id]
-
-   const noteId = isOptimistic && realNoteId ? realNoteId : note.id
+   const noteId = isOptimistic
+      ? optimisticNotesIdsMap[note.id] ?? note.id
+      : note.id
 
    const isEditing = editingNoteId === note.id
 
