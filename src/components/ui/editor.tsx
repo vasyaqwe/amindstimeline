@@ -64,7 +64,7 @@ export const Editor = ({
       <form
          ref={formRef}
          className={cn(
-            `flex min-h-[164px] flex-col rounded-2xl border border-border/60 bg-muted transition focus-within:border-border focus-within:outline-none
+            `grid min-h-[164px] grid-cols-1 grid-rows-[1fr,min-content] rounded-2xl border border-border/60 bg-muted transition focus-within:border-border focus-within:outline-none
           hover:border-border md:min-h-[194.5px]`,
             className
          )}
