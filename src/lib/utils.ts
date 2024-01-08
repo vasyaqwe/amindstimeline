@@ -2,7 +2,12 @@ import { type Note } from "@/types/supabase"
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { toHtml } from "hast-util-to-html"
-import { common, createLowlight } from "lowlight"
+import { createLowlight } from "lowlight"
+import { decode } from "html-entities"
+import javascript from "highlight.js/lib/languages/javascript"
+import typescript from "highlight.js/lib/languages/typescript"
+import css from "highlight.js/lib/languages/css"
+import xml from "highlight.js/lib/languages/xml"
 
 export function cn(...inputs: ClassValue[]) {
    return twMerge(clsx(inputs))
@@ -98,29 +103,30 @@ export function isMobile() {
 }
 
 export function parseCodeBlocks({ content }: { content: string }) {
-   const lowlight = createLowlight(common)
+   const splitChunks = content.split(/(<pre><code>[\s\S]*?<\/code><\/pre>)/g)
+   const lowlight = createLowlight({
+      javascript,
+      typescript,
+      xml,
+      css,
+   })
 
-   const regex = /<code>([\s\S]*?)<\/code>/gm
-   let m
-   let outputHtml = content
-   while ((m = regex.exec(content)) !== null) {
-      // Extract the unescaped innerText of the <code> tag
-      const tempDiv = document.createElement("div")
-      tempDiv.innerHTML = m[0]
-      const codeText = (tempDiv?.firstChild as HTMLElement)?.innerText
+   for (let i = 0; i < splitChunks.length; i++) {
+      if (splitChunks[i]?.startsWith("<pre><code>")) {
+         const codeBlockContent = decode(splitChunks[i])
+            ?.replace("<pre><code>", "")
+            .replace("</code></pre>", "")
 
-      // Replace the <code> block with the processed version
-      const processedCodeText = toHtml(lowlight.highlightAuto(codeText))
+         const highlightedCode = toHtml(
+            lowlight.highlightAuto(codeBlockContent ?? "")
+         )
 
-      const newCodeTag = `<code>${processedCodeText}</code>`
-      outputHtml =
-         outputHtml.substring(0, m.index) +
-         newCodeTag +
-         outputHtml.substring(regex.lastIndex)
-      regex.lastIndex += newCodeTag.length - m[0].length
+         const decodedCode = highlightedCode
 
-      // Replace escaped characters back to "<" and ">"
-      outputHtml = outputHtml.replace(/</g, "<").replace(/&gt;/g, ">")
+         const updated = `<pre><code>${decodedCode}</code></pre>`
+
+         splitChunks[i] = updated
+      }
    }
-   return outputHtml
+   return splitChunks.join("")
 }

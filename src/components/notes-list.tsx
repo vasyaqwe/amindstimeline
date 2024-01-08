@@ -27,6 +27,7 @@ import {
    useEffect,
    useState,
    type MouseEvent,
+   useMemo,
 } from "react"
 import {
    chunk,
@@ -303,7 +304,6 @@ const EditorOutput = ({
          toast.error("Failed to delete note, something went wrong")
       },
    })
-
    const { mutate: onUpdate, isPending: isUpdatePending } = useMutation({
       mutationKey: ["notes-update"],
       mutationFn: async ({ id }: { id: string }) => {
@@ -393,6 +393,14 @@ const EditorOutput = ({
    const noteId = isOptimistic && realNoteId ? realNoteId : note.id
 
    const isEditing = editingNoteId === note.id
+
+   const _content = useMemo(() => {
+      return content.includes("<code>")
+         ? parseCodeBlocks({
+              content,
+           })
+         : content
+   }, [content])
 
    return (
       <>
@@ -514,11 +522,7 @@ const EditorOutput = ({
                         shouldAnimate ? "animate-in-note" : ""
                      )}
                      dangerouslySetInnerHTML={{
-                        __html: content.includes("<code>")
-                           ? isClient
-                              ? parseCodeBlocks({ content })
-                              : content
-                           : content,
+                        __html: _content,
                      }}
                   />
                )}

@@ -66,6 +66,7 @@
 }
 
 .prose pre {
+  border-radius: .8rem !important;
   background-color: hsl(0 0% 4%);
 }
 
