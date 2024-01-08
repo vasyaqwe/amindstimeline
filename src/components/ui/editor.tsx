@@ -103,7 +103,7 @@ export const Editor = ({
             className={cn(
                "mt-auto flex items-end",
                toolbarStyle === "floating"
-                  ? "absolute -bottom-[68px] left-0 w-full rounded-2xl border border-border bg-muted p-2"
+                  ? "absolute -bottom-[68px] left-0 rounded-2xl border border-border bg-muted p-2"
                   : " p-3 pt-1 "
             )}
          >

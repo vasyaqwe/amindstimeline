@@ -6,7 +6,7 @@
   :root {
     --avatar-size: 30px;
 
-    --background: 0 0% 6.5%;
+    --background: 0 0% 7%;
     --foreground: 0 0% 88%;
 
     --popover: 240 5% 10%;
@@ -18,7 +18,7 @@
     --secondary: 260 4% 12%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 240 2% 9%;
+    --muted: 240 2% 10%;
     --muted-foreground: 240 2% 21%;
 
     --accent: 37 91% 75%;
