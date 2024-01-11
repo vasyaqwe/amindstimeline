@@ -50,6 +50,13 @@ export default function RootLayout({
                toastOptions={{
                   classNames: {
                      title: "!font-normal",
+                     actionButton: `bg-foreground transition-colors active:scale-[98%] hover:!bg-foreground/90`,
+                  },
+                  actionButtonStyle: {
+                     borderRadius: ".5rem",
+                     padding: "1rem",
+                     transition: ".2s ease",
+                     fontSize: "13px",
                   },
                   style: {
                      borderRadius: "100vmax",
