@@ -482,7 +482,6 @@ const EditorOutput = ({
                      onClick={() => {
                         setDeletedIds((prev) => [...prev, note.id])
                         toast.success("Note deleted", {
-                           duration: 1000000000,
                            onDismiss: () =>
                               onDelete({
                                  id: noteId,
