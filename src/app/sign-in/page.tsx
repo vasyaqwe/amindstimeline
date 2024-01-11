@@ -53,6 +53,7 @@ export default async function Login({
          className="grid h-svh place-content-center"
          action={signIn}
       >
+         {process.env.VERCEL_URL}
          <h1 className="mb-5 text-center font-accent text-6xl text-accent">
             <Image
                className="-mt-1 mr-1 inline max-w-[48px]"
