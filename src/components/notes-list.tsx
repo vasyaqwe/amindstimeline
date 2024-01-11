@@ -28,6 +28,7 @@ import {
    useState,
    type MouseEvent,
    useMemo,
+   useDeferredValue,
 } from "react"
 import {
    chunk,
@@ -125,8 +126,13 @@ export function NotesList({ initialNotes }: NotesListProps) {
       initialData: { pageParams: [1], pages: [initialNotes] },
    })
 
+   //wow, it just works, note exit animation bug is fixed by deferring deletedIds
+   const deferredDeletedIds = useDeferredValue(deletedIds)
+
    const notes = Object.entries(
-      groupByDate(data.pages?.flat().filter((n) => !deletedIds.includes(n.id)))
+      groupByDate(
+         data.pages?.flat().filter((n) => !deferredDeletedIds.includes(n.id))
+      )
    )
 
    const { ref, entry } = useIntersection({
@@ -482,6 +488,11 @@ const EditorOutput = ({
                      onClick={() => {
                         setDeletedIds((prev) => [...prev, note.id])
                         toast.success("Note deleted", {
+                           duration: 3000,
+                           onAutoClose: () =>
+                              onDelete({
+                                 id: noteId,
+                              }),
                            onDismiss: () =>
                               onDelete({
                                  id: noteId,
