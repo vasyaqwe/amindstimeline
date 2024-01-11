@@ -25,10 +25,7 @@ export default async function Login({
       const cookieStore = cookies()
       const supabase = createClient(cookieStore)
 
-      const baseUrl =
-         process.env.NODE_ENV === "development"
-            ? "http://localhost:3000"
-            : `https://trymemento.vercel.app`
+      const baseUrl = process.env.VERCEL_URL ?? "http://localhost:3000"
 
       const { error, data } = await supabase.auth.signInWithOAuth({
          provider: "google",

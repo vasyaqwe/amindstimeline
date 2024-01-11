@@ -276,7 +276,7 @@ const EditorOutput = ({
 
    const isOptimistic = note.id.startsWith("optimistic")
 
-   const { mutate: onDelete, isPending: isDeletePending } = useMutation({
+   const { mutate: onDelete } = useMutation({
       mutationFn: async ({ id }: { id: string }) => {
          const { data, error } = await supabase
             .from("notes")
@@ -291,8 +291,6 @@ const EditorOutput = ({
          }
       },
       onSuccess: async (deletedNote) => {
-         setDeletedIds((prev) => [...prev, note.id])
-
          if (deletedNote) {
             const filesToDelete = getFileNamesFromHTML(
                deletedNote.content
@@ -471,7 +469,6 @@ const EditorOutput = ({
                )}
                {isEditing ? (
                   <Button
-                     disabled={isDeletePending}
                      size={"icon"}
                      className="rounded-l-none border-l-transparent text-foreground/60 hover:border"
                      onClick={onCancelEditing}
@@ -480,20 +477,26 @@ const EditorOutput = ({
                   </Button>
                ) : (
                   <Button
-                     disabled={isDeletePending}
                      size={"icon"}
                      className="rounded-l-none border-l-transparent text-foreground/60 hover:border-destructive/25 hover:text-destructive/60"
-                     onClick={() =>
-                        onDelete({
-                           id: noteId,
+                     onClick={() => {
+                        setDeletedIds((prev) => [...prev, note.id])
+                        toast.success("Note deleted", {
+                           onDismiss: () =>
+                              onDelete({
+                                 id: noteId,
+                              }),
+                           action: {
+                              label: "Undo",
+                              onClick: () =>
+                                 setDeletedIds((prev) =>
+                                    prev.filter((id) => id !== note.id)
+                                 ),
+                           },
                         })
-                     }
+                     }}
                   >
-                     {isDeletePending ? (
-                        <Loading />
-                     ) : (
-                        <TrashIcon className="size-5 fill-current" />
-                     )}
+                     <TrashIcon className="size-5 fill-current" />
                   </Button>
                )}
             </div>
