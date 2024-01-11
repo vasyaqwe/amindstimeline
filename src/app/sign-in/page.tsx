@@ -25,7 +25,10 @@ export default async function Login({
       const cookieStore = cookies()
       const supabase = createClient(cookieStore)
 
-      const baseUrl = process.env.VERCEL_URL ?? "http://localhost:3000"
+      const baseUrl =
+         process.env.NODE_ENV === "development"
+            ? "http://localhost:3000"
+            : `https://trymemento.vercel.app`
 
       const { error, data } = await supabase.auth.signInWithOAuth({
          provider: "google",
@@ -53,7 +56,6 @@ export default async function Login({
          className="grid h-svh place-content-center"
          action={signIn}
       >
-         {process.env.VERCEL_URL}
          <h1 className="mb-5 text-center font-accent text-6xl text-accent">
             <Image
                className="-mt-1 mr-1 inline max-w-[48px]"
