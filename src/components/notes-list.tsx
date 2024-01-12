@@ -13,12 +13,12 @@ import {
 import { useIntersection } from "@/hooks/use-intersection"
 import { createClient } from "@/lib/supabase/client"
 import {
-   type QueryStatus,
    useInfiniteQuery,
    useMutationState,
    useMutation,
    useQueryClient,
    type InfiniteData,
+   keepPreviousData,
 } from "@tanstack/react-query"
 import { AnimatePresence } from "framer-motion"
 import {
@@ -29,6 +29,7 @@ import {
    type MouseEvent,
    useMemo,
    useDeferredValue,
+   useRef,
 } from "react"
 import {
    chunk,
@@ -44,26 +45,28 @@ import {
    PencilIcon,
    TrashIcon,
    XMarkIcon,
+   MagnifyingGlassIcon,
 } from "@heroicons/react/20/solid"
 import { toast } from "sonner"
 import { Editor } from "@/components/ui/editor"
 import { useEventListener } from "@/hooks/use-event-listener"
 import { useEditor } from "@/hooks/use-editor"
-import { createPortal } from "react-dom"
+import { createPortal, flushSync } from "react-dom"
 import { useIsClient } from "@/hooks/use-is-client"
 import { ImagePreviewDialog } from "@/components/dialogs/image-preview-dialog"
 import { useGlobalStore } from "@/stores/use-global-store"
+import { Input } from "@/components/ui/input"
+import { useDebounce } from "@/hooks/use-debounce"
 
 type NotesListProps = {
    initialNotes: Note[]
 }
 
-async function fetchNotes({ pageParam = 1 }) {
+async function fetchNotes({ pageParam = 1, searchQuery = "" }) {
    const supabase = createClient()
 
    const from = (pageParam - 1) * NOTES_LIMIT
    const to = from + NOTES_LIMIT - 1
-   await new Promise((resolve) => setTimeout(resolve, 200))
 
    const { data, error } = await supabase
       .from("notes")
@@ -75,17 +78,33 @@ async function fetchNotes({ pageParam = 1 }) {
       throw new Error(error.message)
    }
 
+   if (searchQuery && searchQuery.trim() !== "") {
+      return data.filter(
+         (note) =>
+            note.content
+               ?.replace(/<\/?[^>]+(>|$)/g, "")
+               .toLowerCase()
+               .includes(searchQuery.toLowerCase())
+      )
+   }
+
    return data
 }
 
 export function NotesList({ initialNotes }: NotesListProps) {
    const { isClient } = useIsClient()
    const { previewImageSrc } = useGlobalStore()
-   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
-   const variables = useMutationState<QueryStatus>({
-      filters: { mutationKey: notesMutationKey, status: "pending" },
-      select: (mutation) => mutation.state.status as never,
+   const [searchInputVisible, setSearchInputVisible] = useState(false)
+   const [searchQuery, setSearchQuery] = useState("")
+   const { debouncedValue: debouncedSearchQuery } = useDebounce<string>({
+      value: searchQuery,
+      delay: 500,
    })
+
+   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+
+   const searchInputRef = useRef<HTMLInputElement>(null)
+
    const createdNotes = useMutationState<Note & { optimisticId: string }>({
       filters: { mutationKey: notesMutationKey, status: "success" },
       select: (mutation) =>
@@ -113,11 +132,14 @@ export function NotesList({ initialNotes }: NotesListProps) {
       hasNextPage,
       isFetchedAfterMount,
       isFetchingNextPage,
+      isFetching,
+      refetch,
       data,
    } = useInfiniteQuery({
       queryKey: notesQueryKey,
-      queryFn: fetchNotes,
+      queryFn: ({ pageParam }) => fetchNotes({ pageParam, searchQuery }),
       initialPageParam: 1,
+      placeholderData: keepPreviousData,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       getNextPageParam: (lastPage, allPages) => {
@@ -125,15 +147,6 @@ export function NotesList({ initialNotes }: NotesListProps) {
       },
       initialData: { pageParams: [1], pages: [initialNotes] },
    })
-
-   //wow, it just works, note exit animation bug is fixed by deferring deletedIds
-   const deferredDeletedIds = useDeferredValue(deletedIds)
-
-   const notes = Object.entries(
-      groupByDate(
-         data.pages?.flat().filter((n) => !deferredDeletedIds.includes(n.id))
-      )
-   )
 
    const { ref, entry } = useIntersection({
       threshold: 0,
@@ -145,101 +158,198 @@ export function NotesList({ initialNotes }: NotesListProps) {
       }
    }, [entry, hasNextPage, fetchNextPage])
 
+   useEffect(() => {
+      void refetch()
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [debouncedSearchQuery])
+
+   useEventListener("keydown", (e) => {
+      if (e.key === "k" && e.ctrlKey) {
+         flushSync(() => {
+            e.preventDefault()
+            setSearchInputVisible(!searchInputVisible)
+         })
+         if (!searchInputVisible) searchInputRef.current?.focus()
+      }
+      if (e.key === "Escape") {
+         setSearchInputVisible(false)
+         setSearchQuery("")
+      }
+   })
+
+   //wow, it just works, note exit animation bug is fixed by deferring deletedIds
+   const deferredDeletedIds = useDeferredValue(deletedIds)
+
+   const notes = Object.entries(
+      groupByDate(
+         data.pages?.flat().filter((n) => !deferredDeletedIds.includes(n.id))
+      )
+   )
+
    return (
       <div className="lg:pt-3">
+         <motion.div
+            animate={{ width: searchInputVisible ? 320 : 50 }}
+            transition={{ duration: 0.25 }}
+            className="fixed bottom-5 left-1/2 z-[50] -translate-x-1/2 overflow-hidden rounded-lg border border-border/60 bg-muted p-1.5 lg:bottom-7"
+         >
+            {searchInputVisible ? (
+               <>
+                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 size-6 -translate-y-1/2 opacity-60" />
+                  <Input
+                     value={searchQuery}
+                     onChange={(e) => setSearchQuery(e.target.value)}
+                     className="border-none bg-transparent py-1 pl-10 pr-2"
+                     ref={searchInputRef}
+                     onBlur={() => {
+                        searchQuery.length < 1 && setSearchInputVisible(false)
+                     }}
+                     placeholder="Search..."
+                  />
+               </>
+            ) : (
+               <Button
+                  onClick={() => {
+                     flushSync(() => setSearchInputVisible(true))
+                     searchInputRef.current?.focus()
+                  }}
+                  size={"icon"}
+                  variant={"ghost"}
+               >
+                  <MagnifyingGlassIcon className="size-6 opacity-60" />
+               </Button>
+            )}
+         </motion.div>
+         <div
+            aria-hidden={true}
+            style={{
+               backgroundImage:
+                  "linear-gradient(180deg, hsl(var(--background) / 0) 10%, hsl(var(--background)) 95%)",
+            }}
+            className="pointer-events-none fixed bottom-0 left-1/2 z-[49] h-32 w-full -translate-x-1/2 lg:h-40"
+         />
          {isClient && <ImagePreviewDialog image={previewImageSrc} />}
 
+         {searchQuery.length > 0 && notes.length < 1 && !isFetching && (
+            <p className="mt-5 text-center font-accent text-5xl">
+               No results found.
+            </p>
+         )}
+         {initialNotes.length < 1 && (
+            <h1 className="mt-5 text-center font-accent text-5xl">
+               Things to come...
+            </h1>
+         )}
+
          <AnimatePresence initial={false}>
-            {notes.length > 0 ? (
-               notes?.map((group, groupIdx) => {
-                  return (
-                     <motion.div
-                        layout={"position"}
-                        exit={{
-                           height: 0,
-                           opacity: 0,
-                        }}
-                        transition={transition}
-                        key={group[0]}
-                        className="relative"
-                     >
-                        <motion.p
-                           initial={{
-                              height: 0,
-                              opacity: 0,
-                           }}
-                           animate={{
-                              opacity: 1,
-                              height: "auto",
-                              transition: {
-                                 ...transition,
-                                 opacity: { delay: 0.1 },
-                              },
-                           }}
-                           className="right-full top-4 whitespace-nowrap text-right text-muted-foreground max-lg:text-center lg:absolute lg:right-[calc(100%-3rem)]"
-                        >
-                           {" "}
-                           {group[0]}{" "}
-                           <span
-                              className={cn(
-                                 "ml-1 inline-block text-lg text-accent",
-                                 groupIdx === 0 ? "max-lg:mt-4" : "max-lg:mt-3"
-                              )}
-                           >
-                              {group[1].length > NOTES_LIMIT - 1
-                                 ? "15+"
-                                 : group[1].length}
-                           </span>
-                        </motion.p>
-                        <AnimatePresence initial={false}>
-                           {group[1].map((note, noteIdx) => (
-                              <motion.div
-                                 style={{
-                                    zIndex:
-                                       note.id === editingNoteId
-                                          ? 999
-                                          : noteIdx,
-                                 }}
-                                 key={note.id}
-                                 exit={{
-                                    height: 0,
-                                    opacity: 0,
-                                 }}
-                                 initial={{
-                                    height: 0,
-                                    opacity: 0,
-                                 }}
-                                 animate={{
-                                    opacity: 1,
-                                    height: "auto",
-                                    transition: {
-                                       ...transition,
-                                       opacity: { delay: 0.1 },
-                                    },
-                                 }}
-                                 transition={transition}
-                                 className="group relative lg:px-24"
-                              >
-                                 <EditorOutput
-                                    editingNoteId={editingNoteId}
-                                    setEditingNoteId={setEditingNoteId}
-                                    note={note}
-                                    optimisticNotesIdsMap={
-                                       optimisticNotesIdsMap
-                                    }
-                                    setDeletedIds={setDeletedIds}
-                                 />
-                              </motion.div>
-                           ))}
-                        </AnimatePresence>
-                     </motion.div>
-                  )
-               })
-            ) : variables.length < 1 ? (
-               <h1 className="mt-5 text-center font-accent text-5xl">
-                  Things to come...
-               </h1>
-            ) : null}
+            {notes.length > 0
+               ? notes?.map((group, groupIdx) => {
+                    return (
+                       <motion.div
+                          layout={"position"}
+                          exit={{
+                             height: 0,
+                             opacity: 0,
+                          }}
+                          initial={
+                             searchInputVisible
+                                ? {
+                                     height: 0,
+                                     opacity: 0,
+                                  }
+                                : undefined
+                          }
+                          animate={
+                             searchInputVisible
+                                ? {
+                                     opacity: 1,
+                                     height: "auto",
+                                     transition: {
+                                        ...transition,
+                                        opacity: { delay: 0.1 },
+                                     },
+                                  }
+                                : undefined
+                          }
+                          transition={transition}
+                          key={group[0]}
+                          className="relative"
+                       >
+                          <motion.p
+                             initial={{
+                                height: 0,
+                                opacity: 0,
+                             }}
+                             animate={{
+                                opacity: 1,
+                                height: "auto",
+                                transition: {
+                                   ...transition,
+                                   opacity: { delay: 0.1 },
+                                },
+                             }}
+                             className="right-full top-4 whitespace-nowrap text-right text-muted-foreground max-lg:text-center lg:absolute lg:right-[calc(100%-3rem)]"
+                          >
+                             {" "}
+                             {group[0]}{" "}
+                             <span
+                                className={cn(
+                                   "ml-1 inline-block text-lg text-accent",
+                                   groupIdx === 0
+                                      ? "max-lg:mt-4"
+                                      : "max-lg:mt-3"
+                                )}
+                             >
+                                {group[1].length > NOTES_LIMIT - 1
+                                   ? "15+"
+                                   : group[1].length}
+                             </span>
+                          </motion.p>
+                          <AnimatePresence initial={false}>
+                             {group[1].map((note, noteIdx) => (
+                                <motion.div
+                                   style={{
+                                      zIndex:
+                                         note.id === editingNoteId
+                                            ? 999
+                                            : noteIdx,
+                                   }}
+                                   key={note.id}
+                                   exit={{
+                                      height: 0,
+                                      opacity: 0,
+                                   }}
+                                   initial={{
+                                      height: 0,
+                                      opacity: 0,
+                                   }}
+                                   animate={{
+                                      opacity: 1,
+                                      height: "auto",
+                                      transition: {
+                                         ...transition,
+                                         opacity: { delay: 0.1 },
+                                      },
+                                   }}
+                                   transition={transition}
+                                   className="group relative lg:px-24"
+                                >
+                                   <EditorOutput
+                                      editingNoteId={editingNoteId}
+                                      setEditingNoteId={setEditingNoteId}
+                                      note={note}
+                                      optimisticNotesIdsMap={
+                                         optimisticNotesIdsMap
+                                      }
+                                      setDeletedIds={setDeletedIds}
+                                   />
+                                </motion.div>
+                             ))}
+                          </AnimatePresence>
+                       </motion.div>
+                    )
+                 })
+               : null}
          </AnimatePresence>
 
          {isFetchedAfterMount && isFetchingNextPage && notes.length > 1 && (

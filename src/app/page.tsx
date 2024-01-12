@@ -26,18 +26,10 @@ export default async function Index() {
    return (
       <>
          <Header />
-         <main className="mx-auto max-w-5xl px-5 pb-32 pt-7">
+         <main className="mx-auto max-w-5xl px-5 pb-32 pt-7 lg:pb-40">
             <CreateNoteForm />
             <NotesList initialNotes={notes as Note[]} />
          </main>
-         <div
-            aria-hidden={true}
-            style={{
-               backgroundImage:
-                  "linear-gradient(180deg, hsl(var(--background) / 0), hsl(var(--background)))",
-            }}
-            className="pointer-events-none fixed bottom-0 left-1/2 z-[99] h-28 w-full -translate-x-1/2 lg:h-36"
-         />
       </>
    )
 }

@@ -50,6 +50,7 @@ export default function RootLayout({
                toastOptions={{
                   classNames: {
                      title: "!font-normal",
+                     toast: "!rounded-2xl !p-3 !pl-3.5",
                      actionButton: `bg-foreground transition-colors active:scale-[98%] hover:!bg-foreground/90`,
                   },
                   actionButtonStyle: {
@@ -59,13 +60,12 @@ export default function RootLayout({
                      fontSize: "13px",
                   },
                   style: {
-                     borderRadius: "100vmax",
                      backgroundColor: "hsl(var(--muted))",
                      color: "hsl(var(--foreground))",
                      borderColor: "hsl(var(--border)/.8)",
                   },
                }}
-               position="bottom-center"
+               position="top-center"
                style={{ font: "inherit" }}
             />
          </body>

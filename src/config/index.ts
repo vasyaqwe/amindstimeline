@@ -7,5 +7,5 @@ export const notesMutationKey = ["add-note"]
 export const transition = {
    type: "spring",
    bounce: 0,
-   opacity: { duration: 0.25 },
+   opacity: { duration: 0.2 },
 }
