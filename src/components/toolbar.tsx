@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useEventListener } from "@/hooks/use-event-listener"
+import { useIsClient } from "@/hooks/use-is-client"
 import { ArrowUpIcon, MagnifyingGlassIcon } from "@heroicons/react/20/solid"
 import { AnimatePresence, motion } from "framer-motion"
 import { CornerDownLeft } from "lucide-react"
@@ -10,6 +11,7 @@ import {
    type KeyboardEvent,
    type Dispatch,
    type SetStateAction,
+   useEffect,
 } from "react"
 import { flushSync } from "react-dom"
 
@@ -22,11 +24,23 @@ export function Toolbar({
    searchQuery: string
    setSearchQuery: Dispatch<SetStateAction<string>>
 }) {
+   const { isClient } = useIsClient()
+   const [y, setY] = useState(0)
    const [lastKeyPressTime, setLastKeyPressTime] = useState(0)
 
    const [expanded, setExpanded] = useState(false)
 
    const searchInputRef = useRef<HTMLInputElement>(null)
+
+   useEffect(() => {
+      if (isClient) setY(window.visualViewport?.height ?? 0)
+   }, [isClient])
+
+   useEventListener("resize", () => {
+      if (!isClient) return
+
+      setY(window.visualViewport?.height ?? 0)
+   })
 
    useEventListener("keydown", (e) => {
       if (e.key === "k" && e.ctrlKey) {
@@ -55,9 +69,14 @@ export function Toolbar({
 
    return (
       <motion.div
+         style={{
+            top: y > 0 ? y - 80 : "auto",
+            bottom: isClient ? "auto" : 30,
+         }}
+         initial={false}
          animate={{ width: expanded ? 320 : 100 }}
-         transition={{ ease: "circInOut", duration: 0.4 }}
-         className="fixed bottom-5 left-1/2 z-[50] flex min-h-[50.5px] -translate-x-1/2 items-center overflow-hidden rounded-lg border border-border/60 bg-muted p-1.5 lg:bottom-7"
+         transition={{ ease: "circInOut", duration: 0.3 }}
+         className="fixed left-1/2 z-[50] flex min-h-[50.5px] -translate-x-1/2 items-center overflow-hidden rounded-lg border border-border/50 bg-muted p-1.5"
       >
          <Button
             onClick={() => {
@@ -110,12 +129,12 @@ export function Toolbar({
          <AnimatePresence initial={false}>
             {!expanded && (
                <motion.div
-                  className="absolute left-[calc(50%-0.5px)] top-1/2 h-[50%] w-[1px] -translate-x-1/2 -translate-y-1/2 bg-muted-foreground"
+                  className="absolute left-[calc(50%-0.5px)] top-1/2 h-[50%] w-[1px] -translate-x-1/2 -translate-y-1/2 bg-border"
                   initial={{ opacity: 0 }}
                   animate={{
                      opacity: 1,
                      transition: {
-                        delay: 0.3,
+                        delay: 0.2,
                      },
                   }}
                   exit={{
