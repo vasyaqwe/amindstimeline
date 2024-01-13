@@ -8,7 +8,7 @@ import {
    NOTES_LIMIT,
    notesMutationKey,
    notesQueryKey,
-   transition,
+   motionProps,
 } from "@/config"
 import { useIntersection } from "@/hooks/use-intersection"
 import { createClient } from "@/lib/supabase/client"
@@ -29,7 +29,6 @@ import {
    type MouseEvent,
    useMemo,
    useDeferredValue,
-   useRef,
 } from "react"
 import {
    chunk,
@@ -37,6 +36,7 @@ import {
    getFileNamesFromHTML,
    groupByDate,
    parseCodeBlocks,
+   pick,
    reverseKeysWithValues,
 } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -45,18 +45,16 @@ import {
    PencilIcon,
    TrashIcon,
    XMarkIcon,
-   MagnifyingGlassIcon,
 } from "@heroicons/react/20/solid"
 import { toast } from "sonner"
 import { Editor } from "@/components/ui/editor"
 import { useEventListener } from "@/hooks/use-event-listener"
 import { useEditor } from "@/hooks/use-editor"
-import { createPortal, flushSync } from "react-dom"
+import { createPortal } from "react-dom"
 import { useIsClient } from "@/hooks/use-is-client"
 import { ImagePreviewDialog } from "@/components/dialogs/image-preview-dialog"
 import { useGlobalStore } from "@/stores/use-global-store"
-import { Input } from "@/components/ui/input"
-import { useDebounce } from "@/hooks/use-debounce"
+import { Toolbar } from "@/components/toolbar"
 
 type NotesListProps = {
    initialNotes: Note[]
@@ -68,17 +66,26 @@ async function fetchNotes({ pageParam = 1, searchQuery = "" }) {
    const from = (pageParam - 1) * NOTES_LIMIT
    const to = from + NOTES_LIMIT - 1
 
-   const { data, error } = await supabase
+   const isSearching = searchQuery && searchQuery.trim() !== ""
+
+   let query = supabase
       .from("notes")
       .select("*")
       .order("created_at", { ascending: false })
       .range(from, to)
 
+   if (isSearching) {
+      query = query.ilike("content", `%${searchQuery}%`)
+   }
+
+   const { data, error } = await query
+
    if (error) {
       throw new Error(error.message)
    }
 
-   if (searchQuery && searchQuery.trim() !== "") {
+   if (isSearching) {
+      //filter out html
       return data.filter(
          (note) =>
             note.content
@@ -94,16 +101,8 @@ async function fetchNotes({ pageParam = 1, searchQuery = "" }) {
 export function NotesList({ initialNotes }: NotesListProps) {
    const { isClient } = useIsClient()
    const { previewImageSrc } = useGlobalStore()
-   const [searchInputVisible, setSearchInputVisible] = useState(false)
-   const [searchQuery, setSearchQuery] = useState("")
-   const { debouncedValue: debouncedSearchQuery } = useDebounce<string>({
-      value: searchQuery,
-      delay: 500,
-   })
 
    const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
-
-   const searchInputRef = useRef<HTMLInputElement>(null)
 
    const createdNotes = useMutationState<Note & { optimisticId: string }>({
       filters: { mutationKey: notesMutationKey, status: "success" },
@@ -127,17 +126,23 @@ export function NotesList({ initialNotes }: NotesListProps) {
       )
    }, [createdNotes])
 
+   const [searchQuery, setSearchQuery] = useState("")
+
    const {
       fetchNextPage,
       hasNextPage,
+      refetch,
+      isFetching,
       isFetchedAfterMount,
       isFetchingNextPage,
-      isFetching,
-      refetch,
       data,
    } = useInfiniteQuery({
       queryKey: notesQueryKey,
-      queryFn: ({ pageParam }) => fetchNotes({ pageParam, searchQuery }),
+      queryFn: ({ pageParam }) =>
+         fetchNotes({
+            pageParam,
+            searchQuery,
+         }),
       initialPageParam: 1,
       placeholderData: keepPreviousData,
       refetchOnWindowFocus: false,
@@ -158,25 +163,6 @@ export function NotesList({ initialNotes }: NotesListProps) {
       }
    }, [entry, hasNextPage, fetchNextPage])
 
-   useEffect(() => {
-      void refetch()
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-   }, [debouncedSearchQuery])
-
-   useEventListener("keydown", (e) => {
-      if (e.key === "k" && e.ctrlKey) {
-         flushSync(() => {
-            e.preventDefault()
-            setSearchInputVisible(!searchInputVisible)
-         })
-         if (!searchInputVisible) searchInputRef.current?.focus()
-      }
-      if (e.key === "Escape") {
-         setSearchInputVisible(false)
-         setSearchQuery("")
-      }
-   })
-
    //wow, it just works, note exit animation bug is fixed by deferring deletedIds
    const deferredDeletedIds = useDeferredValue(deletedIds)
 
@@ -188,38 +174,11 @@ export function NotesList({ initialNotes }: NotesListProps) {
 
    return (
       <div className="lg:pt-3">
-         <motion.div
-            animate={{ width: searchInputVisible ? 320 : 50 }}
-            transition={{ duration: 0.25 }}
-            className="fixed bottom-5 left-1/2 z-[50] -translate-x-1/2 overflow-hidden rounded-lg border border-border/60 bg-muted p-1.5 lg:bottom-7"
-         >
-            {searchInputVisible ? (
-               <>
-                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 size-6 -translate-y-1/2 opacity-60" />
-                  <Input
-                     value={searchQuery}
-                     onChange={(e) => setSearchQuery(e.target.value)}
-                     className="border-none bg-transparent py-1 pl-10 pr-2"
-                     ref={searchInputRef}
-                     onBlur={() => {
-                        searchQuery.length < 1 && setSearchInputVisible(false)
-                     }}
-                     placeholder="Search..."
-                  />
-               </>
-            ) : (
-               <Button
-                  onClick={() => {
-                     flushSync(() => setSearchInputVisible(true))
-                     searchInputRef.current?.focus()
-                  }}
-                  size={"icon"}
-                  variant={"ghost"}
-               >
-                  <MagnifyingGlassIcon className="size-6 opacity-60" />
-               </Button>
-            )}
-         </motion.div>
+         <Toolbar
+            onSubmit={refetch}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+         />
          <div
             aria-hidden={true}
             style={{
@@ -246,49 +205,18 @@ export function NotesList({ initialNotes }: NotesListProps) {
                ? notes?.map((group, groupIdx) => {
                     return (
                        <motion.div
-                          layout={"position"}
-                          exit={{
-                             height: 0,
-                             opacity: 0,
-                          }}
-                          initial={
-                             searchInputVisible
-                                ? {
-                                     height: 0,
-                                     opacity: 0,
-                                  }
-                                : undefined
-                          }
-                          animate={
-                             searchInputVisible
-                                ? {
-                                     opacity: 1,
-                                     height: "auto",
-                                     transition: {
-                                        ...transition,
-                                        opacity: { delay: 0.1 },
-                                     },
-                                  }
-                                : undefined
-                          }
-                          transition={transition}
                           key={group[0]}
+                          layout={"position"}
                           className="relative"
+                          {...pick(motionProps, ["exit", "transition"])}
                        >
                           <motion.p
-                             initial={{
-                                height: 0,
-                                opacity: 0,
-                             }}
-                             animate={{
-                                opacity: 1,
-                                height: "auto",
-                                transition: {
-                                   ...transition,
-                                   opacity: { delay: 0.1 },
-                                },
-                             }}
                              className="right-full top-4 whitespace-nowrap text-right text-muted-foreground max-lg:text-center lg:absolute lg:right-[calc(100%-3rem)]"
+                             {...pick(motionProps, [
+                                "initial",
+                                "animate",
+                                "transition",
+                             ])}
                           >
                              {" "}
                              {group[0]}{" "}
@@ -308,31 +236,15 @@ export function NotesList({ initialNotes }: NotesListProps) {
                           <AnimatePresence initial={false}>
                              {group[1].map((note, noteIdx) => (
                                 <motion.div
+                                   key={note.id}
                                    style={{
                                       zIndex:
                                          note.id === editingNoteId
                                             ? 999
                                             : noteIdx,
                                    }}
-                                   key={note.id}
-                                   exit={{
-                                      height: 0,
-                                      opacity: 0,
-                                   }}
-                                   initial={{
-                                      height: 0,
-                                      opacity: 0,
-                                   }}
-                                   animate={{
-                                      opacity: 1,
-                                      height: "auto",
-                                      transition: {
-                                         ...transition,
-                                         opacity: { delay: 0.1 },
-                                      },
-                                   }}
-                                   transition={transition}
                                    className="group relative lg:px-24"
+                                   {...motionProps}
                                 >
                                    <EditorOutput
                                       editingNoteId={editingNoteId}
@@ -533,26 +445,22 @@ const EditorOutput = ({
          {(noteId || !isOptimistic) && (
             <div
                data-visible={isEditing}
-               className={`absolute z-[1] mt-4 flex scale-75 opacity-0 transition duration-300 
-                focus-within:scale-100
-                focus-within:opacity-100 
-                group-hover:scale-100
+               className={`peer absolute right-0 z-[1] mt-4 flex scale-[85%] opacity-0 transition 
+                duration-300
+                focus-within:scale-100 
+                focus-within:opacity-100
+                group-hover:scale-100 
                 group-hover:opacity-100 
-                data-[visible=true]:scale-100 
+                data-[visible=true]:scale-100
                 data-[visible=true]:opacity-100
-                max-lg:right-0
-                max-lg:translate-y-10 
-                max-lg:focus-within:-translate-y-12 
-                max-lg:group-hover:-translate-y-12 
-                max-lg:data-[visible=true]:-translate-y-12 
-                lg:left-[calc(100%-48px)]
-                lg:-translate-x-20
-                lg:focus-within:-translate-x-9 
-                lg:group-hover:-translate-x-9 
-                lg:data-[visible=true]:-translate-x-9`}
+                max-lg:-top-full
+                max-lg:translate-y-full
+                lg:right-2
+        `}
             >
                {isEditing ? (
                   <Button
+                     aria-label="Save note"
                      disabled={isUpdatePending}
                      size={"icon"}
                      className={cn(
@@ -571,6 +479,7 @@ const EditorOutput = ({
                   </Button>
                ) : (
                   <Button
+                     aria-label="Edit note"
                      size={"icon"}
                      className="rounded-r-none border-r-transparent text-foreground/60 hover:border"
                      onClick={() => {
@@ -585,6 +494,7 @@ const EditorOutput = ({
                )}
                {isEditing ? (
                   <Button
+                     aria-label="Cancel editing"
                      size={"icon"}
                      className="rounded-l-none border-l-transparent text-foreground/60 hover:border"
                      onClick={onCancelEditing}
@@ -593,6 +503,7 @@ const EditorOutput = ({
                   </Button>
                ) : (
                   <Button
+                     aria-label="Delete note"
                      size={"icon"}
                      className="rounded-l-none border-l-transparent text-foreground/60 hover:border-destructive/25 hover:text-destructive/60"
                      onClick={() => {
@@ -626,9 +537,10 @@ const EditorOutput = ({
             id={note.id}
             className="group relative z-[2]"
          >
-            <div className="overflow-hidden [&>*]:mt-4">
+            <div className="overflow-hidden bg-background [&>*]:mt-4">
                {isEditing ? (
                   <Editor
+                     data-hovered={isEditing}
                      toolbarStyle="floating"
                      className="!min-h-[auto]"
                      onSubmit={() => {
@@ -642,9 +554,9 @@ const EditorOutput = ({
                ) : (
                   <div
                      onClick={onEditorOutputClick}
-                     data-hovered={isEditing}
                      className={cn(
-                        "group prose prose-invert max-w-full rounded-2xl border border-border/30 bg-muted p-5 transition-colors hover:border-border group-hover:border-border",
+                        `group prose prose-invert max-w-full rounded-2xl border border-border/30 bg-muted p-5 
+                        transition-colors hover:border-border group-hover:border-border`,
                         shouldAnimate ? "animate-in-note" : ""
                      )}
                      dangerouslySetInnerHTML={{

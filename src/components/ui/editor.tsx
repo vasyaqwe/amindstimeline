@@ -56,16 +56,15 @@ export const Editor = ({
    const formRef = useRef<HTMLFormElement>(null)
 
    if (!editor)
-      return (
-         <Skeleton className="min-h-[164px] rounded-2xl md:min-h-[194.5px]" />
-      )
+      return <Skeleton className="min-h-[var(--editor-height)] rounded-2xl" />
 
    return (
       <form
          ref={formRef}
          className={cn(
-            `grid min-h-[164px] grid-cols-1 grid-rows-[1fr,min-content] rounded-2xl border border-border/60 bg-muted transition focus-within:border-border focus-within:outline-none
-          hover:border-border md:min-h-[194.5px]`,
+            `grid min-h-[var(--editor-height)] grid-cols-1 grid-rows-[1fr,min-content] overflow-hidden rounded-2xl
+             border border-border/60 bg-muted focus-within:border-border
+             focus-within:outline-none hover:border-border data-[hovered=true]:border-border`,
             className
          )}
          {...props}
@@ -96,6 +95,7 @@ export const Editor = ({
          }}
       >
          <EditorContent
+            spellCheck={false}
             onPaste={onImagePaste}
             editor={editor}
          />

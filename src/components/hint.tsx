@@ -5,10 +5,13 @@ import {
    TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { type TooltipTriggerProps } from "@radix-ui/react-tooltip"
-import { type ComponentProps } from "react"
+import { type ReactNode, type ComponentProps } from "react"
 
-type HintProps = ComponentProps<"div"> &
-   TooltipTriggerProps & { content: string; delayDuration?: number }
+type HintProps = Omit<TooltipTriggerProps, "content"> &
+   Omit<ComponentProps<"div">, "content"> & {
+      content: ReactNode | string
+      delayDuration?: number
+   }
 
 export function Hint({
    children,

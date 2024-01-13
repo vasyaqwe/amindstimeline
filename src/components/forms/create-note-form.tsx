@@ -1,5 +1,6 @@
 "use client"
 
+import { Hint } from "@/components/hint"
 import { Button } from "@/components/ui/button"
 import { Editor } from "@/components/ui/editor"
 import { notesMutationKey, notesQueryKey } from "@/config"
@@ -12,6 +13,7 @@ import {
    useMutation,
    useQueryClient,
 } from "@tanstack/react-query"
+import { CornerDownLeft } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
@@ -98,18 +100,27 @@ export function CreateNoteForm() {
             }}
          >
             {editor && (
-               <Button
-                  disabled={
-                     editor.getText().length < 1 &&
-                     !editor.getHTML().includes("img")
-                  }
-                  variant={"ghost"}
-                  size={"icon"}
+               <Hint
                   aria-label="Create note"
-                  className="ml-auto"
+                  content={
+                     <div className="flex">
+                        Create note <CornerDownLeft className="ml-2 size-5" />
+                     </div>
+                  }
+                  className="ml-auto flex"
                >
-                  <PlusIcon className="size-8 opacity-60" />
-               </Button>
+                  <Button
+                     disabled={
+                        editor.getText().length < 1 &&
+                        !editor.getHTML().includes("img")
+                     }
+                     variant={"ghost"}
+                     className="px-0.5"
+                     size={"icon"}
+                  >
+                     <PlusIcon className="size-8 opacity-60" />
+                  </Button>
+               </Hint>
             )}
          </Editor>
       </div>

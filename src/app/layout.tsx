@@ -40,10 +40,12 @@ export default function RootLayout({
             " " +
             carattere.variable +
             " " +
-            jetBrainsMono.variable
+            jetBrainsMono.variable +
+            " " +
+            "[--editor-height:164px] md:[--editor-height:195px]"
          }
       >
-         <body className="bg-background font-primary text-foreground">
+         <body className="bg-background font-primary text-foreground ">
             <TanstackProvider>{children}</TanstackProvider>
             <Toaster
                theme="dark"

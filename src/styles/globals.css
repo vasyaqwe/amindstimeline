@@ -19,7 +19,7 @@
     --secondary-foreground: 0 0% 98%;
 
     --muted: 240 2% 10%;
-    --muted-foreground: 240 2% 26%;
+    --muted-foreground: 240 2% 30%;
 
     --accent: 37 91% 75%;
     --accent-2: 25 92% 51%;
@@ -28,7 +28,7 @@
     --destructive: 0 84.2% 48%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 240 2% 20%;
+    --border: 240 2% 24%;
     --input: 0 0% 25%;
     --ring: 0 0% 98%;
 
@@ -50,6 +50,10 @@
 .ProseMirror {
   font-variant-ligatures: unset !important;
   font-feature-settings: unset !important;
+}
+
+.prose pre {
+  white-space: pre-wrap;
 }
 
 /* editor */

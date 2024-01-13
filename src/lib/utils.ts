@@ -34,6 +34,21 @@ export function getFileNamesFromHTML(html: string | null): string[] {
    return ids as string[]
 }
 
+export function pick<T extends object, K extends keyof T>(
+   obj: T,
+   keys: K[]
+): Pick<T, K> {
+   return keys.reduce(
+      (acc, key) => {
+         if (obj && Object.prototype.hasOwnProperty.call(obj, key)) {
+            acc[key] = obj[key]
+         }
+         return acc
+      },
+      {} as Pick<T, K>
+   )
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function chunk(arr: any[], chunkSize: number) {
    const chunkedArr = []
