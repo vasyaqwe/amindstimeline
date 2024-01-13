@@ -84,8 +84,14 @@ export function Toolbar({
       }
    }
 
+   function scrollToTop() {
+      if (!isClient) return
+      document.documentElement.scrollTo({ top: 0, behavior: "smooth" })
+   }
+
    return (
       <motion.div
+         //fix toolbar going behind ios keyboard
          style={{
             top: y > 0 ? y - 80 : "auto",
             bottom: isClient ? "auto" : 30,
@@ -93,7 +99,7 @@ export function Toolbar({
          initial={false}
          animate={{ width: expanded ? 320 : 100 }}
          transition={{ ease: "circInOut", duration: 0.3 }}
-         className="fixed left-1/2 z-[50] flex min-h-[50.5px] -translate-x-1/2 items-center overflow-hidden rounded-lg border border-border/50 bg-muted p-1.5"
+         className="fixed left-1/2 z-[50] flex min-h-[50.5px] -translate-x-1/2 items-center overflow-hidden rounded-lg border bg-popover/10 p-1.5 shadow-lg backdrop-blur-md"
       >
          <Button
             onClick={() => {
@@ -110,6 +116,7 @@ export function Toolbar({
          <AnimatePresence initial={false}>
             {expanded && (
                <motion.form
+                  id="search"
                   initial={{ opacity: 0 }}
                   animate={{
                      opacity: 1,
@@ -119,8 +126,9 @@ export function Toolbar({
                   className="mr-auto flex items-center"
                   onSubmit={(e) => {
                      e.preventDefault()
-                     if (!isClient || isSearchQueryEmpty) return
+                     if (isSearchQueryEmpty) return
 
+                     scrollToTop()
                      onSubmit()
                   }}
                >
@@ -131,7 +139,6 @@ export function Toolbar({
                         const target = e.target as HTMLInputElement
                         if (
                            target.value === "" &&
-                           isClient &&
                            e.key !== "Enter" &&
                            !e.ctrlKey
                         )
@@ -189,11 +196,9 @@ export function Toolbar({
                   className={cn("absolute right-1.5 flex-shrink-0")}
                >
                   <Button
-                     disabled={isSearchQueryEmpty || !isClient}
+                     form="search"
+                     disabled={isSearchQueryEmpty}
                      aria-label="Search notes"
-                     onClick={() => {
-                        onSubmit()
-                     }}
                      size={"icon"}
                      variant={"ghost"}
                      data-pressed={isReturnKeyPressed}
@@ -214,12 +219,7 @@ export function Toolbar({
                   className="absolute right-1.5 flex-shrink-0"
                >
                   <Button
-                     onClick={() => {
-                        document.documentElement.scrollTo({
-                           top: 0,
-                           behavior: "smooth",
-                        })
-                     }}
+                     onClick={scrollToTop}
                      size={"icon"}
                      variant={"ghost"}
                   >

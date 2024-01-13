@@ -186,10 +186,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
    return (
       <div className="lg:pt-3">
          <Toolbar
-            onSubmit={() => {
-               void refetch()
-               document.documentElement.scrollTo({ top: 0, behavior: "smooth" })
-            }}
+            onSubmit={refetch}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
          />
