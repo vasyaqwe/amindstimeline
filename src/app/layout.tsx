@@ -5,6 +5,7 @@ import "@/styles/globals.css"
 import "@/styles/github-dark.css"
 import { TanstackProvider } from "@/components/tanstack-provider"
 import { Toaster } from "sonner"
+import { type Viewport } from "next"
 
 const defaultUrl = process.env.VERCEL_URL
    ? `https://${process.env.VERCEL_URL}`
@@ -14,6 +15,11 @@ export const metadata = {
    metadataBase: new URL(defaultUrl),
    title: "memento",
    description: "Anything on your mind - note it down here.",
+}
+
+export const viewport: Viewport = {
+   initialScale: 1,
+   maximumScale: 1,
 }
 
 const carattere = Carattere({

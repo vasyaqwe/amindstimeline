@@ -250,6 +250,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
                                       editingNoteId={editingNoteId}
                                       setEditingNoteId={setEditingNoteId}
                                       note={note}
+                                      noteIdx={noteIdx}
                                       optimisticNotesIdsMap={
                                          optimisticNotesIdsMap
                                       }
@@ -279,6 +280,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
 
 type EditorOutputProps = {
    note: Note
+   noteIdx: number
    editingNoteId: string | null
    setEditingNoteId: Dispatch<SetStateAction<string | null>>
    setDeletedIds: Dispatch<SetStateAction<string[]>>
@@ -287,6 +289,7 @@ type EditorOutputProps = {
 
 const EditorOutput = ({
    note,
+   noteIdx,
    setDeletedIds,
    setEditingNoteId,
    editingNoteId,
@@ -445,16 +448,18 @@ const EditorOutput = ({
          {(noteId || !isOptimistic) && (
             <div
                data-visible={isEditing}
-               className={`peer absolute right-0 z-[1] mt-4 flex scale-[85%] opacity-0 transition 
+               className={`peer absolute right-0 z-[1] mt-4 flex scale-[85%] overflow-hidden rounded-md
+                border opacity-0
+                transition 
                 duration-300
                 focus-within:scale-100 
-                focus-within:opacity-100
-                group-hover:scale-100 
-                group-hover:opacity-100 
+                focus-within:opacity-100 
+                group-hover:scale-100
+                group-hover:opacity-100
                 data-[visible=true]:scale-100
                 data-[visible=true]:opacity-100
-                max-lg:-top-full
-                max-lg:translate-y-full
+                max-lg:-top-4
+                max-lg:-translate-y-full
                 lg:right-2
         `}
             >
@@ -464,7 +469,7 @@ const EditorOutput = ({
                      disabled={isUpdatePending}
                      size={"icon"}
                      className={cn(
-                        "rounded-r-none border-r-transparent text-foreground/60",
+                        "rounded-none border-none text-foreground/60",
                         !isUpdatePending
                            ? "hover:border-[#16a34a]/25 hover:text-[#16a34a]/60"
                            : ""
@@ -481,7 +486,7 @@ const EditorOutput = ({
                   <Button
                      aria-label="Edit note"
                      size={"icon"}
-                     className="rounded-r-none border-r-transparent text-foreground/60 hover:border"
+                     className="rounded-none border-none text-foreground/60"
                      onClick={() => {
                         setShouldAnimate(false)
                         setEditingNoteId(note.id)
@@ -496,7 +501,7 @@ const EditorOutput = ({
                   <Button
                      aria-label="Cancel editing"
                      size={"icon"}
-                     className="rounded-l-none border-l-transparent text-foreground/60 hover:border"
+                     className="rounded-none border-none text-foreground/60"
                      onClick={onCancelEditing}
                   >
                      <XMarkIcon className="size-7 fill-current" />
@@ -505,7 +510,7 @@ const EditorOutput = ({
                   <Button
                      aria-label="Delete note"
                      size={"icon"}
-                     className="rounded-l-none border-l-transparent text-foreground/60 hover:border-destructive/25 hover:text-destructive/60"
+                     className="rounded-none border-none text-foreground/60 hover:text-destructive/60"
                      onClick={() => {
                         setDeletedIds((prev) => [...prev, note.id])
                         toast.success("Note deleted", {
@@ -537,7 +542,12 @@ const EditorOutput = ({
             id={note.id}
             className="group relative z-[2]"
          >
-            <div className="overflow-hidden bg-background [&>*]:mt-4">
+            <div
+               className={cn(
+                  "overflow-hidden [&>*]:mt-4",
+                  !isEditing && noteIdx !== 1 ? "bg-background" : ""
+               )}
+            >
                {isEditing ? (
                   <Editor
                      data-hovered={isEditing}
