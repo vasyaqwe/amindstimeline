@@ -16,7 +16,7 @@ import {
    useEffect,
    useRef,
 } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { useSupabaseClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight"
 import js from "highlight.js/lib/languages/javascript"
@@ -58,6 +58,7 @@ export function useEditor({
    shouldInitNewEditorOnReset = true,
    onChange,
 }: UseEditorArgs) {
+   const supabase = useSupabaseClient()
    const [isMounted, setIsMounted] = useState(false)
    const [imagesToDeleteFromBucket, setImagesToDeleteFromBucket] = useState<
       string[]
@@ -181,8 +182,6 @@ export function useEditor({
          uploadImage(e.clipboardData.files[0])
       }
    }
-
-   const supabase = createClient()
 
    function uploadImage(file: File) {
       const upload = async () => {

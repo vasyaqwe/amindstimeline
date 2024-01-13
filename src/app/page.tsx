@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { useSupabaseServer } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { Header } from "@/components/layout/header"
 import { redirect } from "next/navigation"
@@ -9,7 +9,7 @@ import { type Note } from "@/types/supabase"
 
 export default async function Index() {
    const cookieStore = cookies()
-   const supabase = createClient(cookieStore)
+   const supabase = useSupabaseServer(cookieStore)
 
    const {
       data: { session },

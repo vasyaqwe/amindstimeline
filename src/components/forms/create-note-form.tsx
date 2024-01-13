@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Editor } from "@/components/ui/editor"
 import { notesMutationKey, notesQueryKey } from "@/config"
 import { useEditor } from "@/hooks/use-editor"
-import { createClient } from "@/lib/supabase/client"
+import { useSupabaseClient } from "@/lib/supabase/client"
 import { type Note } from "@/types/supabase"
 import { PlusIcon } from "@heroicons/react/20/solid"
 import {
@@ -18,9 +18,9 @@ import { useState } from "react"
 import { toast } from "sonner"
 
 export function CreateNoteForm() {
-   const [content, setContent] = useState("")
+   const supabase = useSupabaseClient()
    const queryClient = useQueryClient()
-   const supabase = createClient()
+   const [content, setContent] = useState("")
 
    const { mutate, isPending } = useMutation({
       mutationKey: notesMutationKey,

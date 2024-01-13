@@ -1,12 +1,12 @@
 import { Avatar } from "@/components/ui/avatar"
-import { createClient } from "@/lib/supabase/server"
+import { useSupabaseServer } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import logo from "@public/logo.png"
 import Image from "next/image"
 
 export async function Header() {
    const cookieStore = cookies()
-   const supabase = createClient(cookieStore)
+   const supabase = useSupabaseServer(cookieStore)
 
    const {
       data: { user },

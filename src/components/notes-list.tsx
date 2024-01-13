@@ -11,7 +11,10 @@ import {
    motionProps,
 } from "@/config"
 import { useIntersection } from "@/hooks/use-intersection"
-import { createClient } from "@/lib/supabase/client"
+import {
+   type TypedSupabaseClient,
+   useSupabaseClient,
+} from "@/lib/supabase/client"
 import {
    useInfiniteQuery,
    useMutationState,
@@ -60,9 +63,15 @@ type NotesListProps = {
    initialNotes: Note[]
 }
 
-async function fetchNotes({ pageParam = 1, searchQuery = "" }) {
-   const supabase = createClient()
-
+async function fetchNotes({
+   supabase,
+   pageParam = 1,
+   searchQuery = "",
+}: {
+   supabase: TypedSupabaseClient
+   pageParam?: number
+   searchQuery: string
+}) {
    const from = (pageParam - 1) * NOTES_LIMIT
    const to = from + NOTES_LIMIT - 1
 
@@ -99,6 +108,7 @@ async function fetchNotes({ pageParam = 1, searchQuery = "" }) {
 }
 
 export function NotesList({ initialNotes }: NotesListProps) {
+   const supabase = useSupabaseClient()
    const { isClient } = useIsClient()
    const { previewImageSrc } = useGlobalStore()
 
@@ -142,6 +152,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
          fetchNotes({
             pageParam,
             searchQuery,
+            supabase,
          }),
       initialPageParam: 1,
       placeholderData: keepPreviousData,
@@ -295,7 +306,7 @@ const EditorOutput = ({
    editingNoteId,
    optimisticNotesIdsMap,
 }: EditorOutputProps) => {
-   const supabase = createClient()
+   const supabase = useSupabaseClient()
    const queryClient = useQueryClient()
    const { showDialog } = useGlobalStore()
    const { isClient } = useIsClient()
