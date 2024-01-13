@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { useSupabaseServer } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 
@@ -11,7 +11,8 @@ export async function GET(request: Request) {
 
    if (code) {
       const cookieStore = cookies()
-      const supabase = createClient(cookieStore)
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const supabase = useSupabaseServer(cookieStore)
       await supabase.auth.exchangeCodeForSession(code)
    }
 
