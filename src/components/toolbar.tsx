@@ -71,7 +71,7 @@ export function Toolbar({
          >
             <MagnifyingGlassIcon className="size-6 opacity-60" />
          </Button>
-         <AnimatePresence>
+         <AnimatePresence initial={false}>
             {expanded && (
                <motion.form
                   initial={{ opacity: 0 }}
@@ -107,7 +107,7 @@ export function Toolbar({
             )}
          </AnimatePresence>
 
-         <AnimatePresence>
+         <AnimatePresence initial={false}>
             {!expanded && (
                <motion.div
                   className="absolute left-[calc(50%-0.5px)] top-1/2 h-[50%] w-[1px] -translate-x-1/2 -translate-y-1/2 bg-muted-foreground"
@@ -129,7 +129,10 @@ export function Toolbar({
             )}
          </AnimatePresence>
 
-         <AnimatePresence mode="wait">
+         <AnimatePresence
+            initial={false}
+            mode="wait"
+         >
             {expanded ? (
                <motion.div
                   key={expanded.toString()}
