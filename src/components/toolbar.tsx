@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useEventListener } from "@/hooks/use-event-listener"
 import { useIsClient } from "@/hooks/use-is-client"
+import { cn } from "@/lib/utils"
 import { ArrowUpIcon, MagnifyingGlassIcon } from "@heroicons/react/20/solid"
 import { AnimatePresence, motion } from "framer-motion"
 import { CornerDownLeft } from "lucide-react"
@@ -26,15 +27,18 @@ export function Toolbar({
 }) {
    const { isClient } = useIsClient()
    const [y, setY] = useState(0)
-   const [lastKeyPressTime, setLastKeyPressTime] = useState(0)
+   const [lastReturnKeyPressTime, setLastReturnKeyPressTime] = useState(0)
+   const [isReturnKeyPressed, setIsReturnKeyPressed] = useState(false)
 
    const [expanded, setExpanded] = useState(false)
 
    const searchInputRef = useRef<HTMLInputElement>(null)
 
+   const isSearchQueryEmpty = searchQuery.trim() === ""
+
    useEffect(() => {
       if (isClient) setY(window.visualViewport?.height ?? 0)
-   }, [isClient])
+   }, [isClient, expanded])
 
    useEventListener("resize", () => {
       if (!isClient) return
@@ -57,12 +61,25 @@ export function Toolbar({
    })
 
    const onKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
+      let timeout: NodeJS.Timeout | null = null
+
+      if (timeout) {
+         clearTimeout(timeout)
+      }
+
       if (e.key === "Enter") {
          const now = Date.now()
-         if (now - lastKeyPressTime < 600) {
+         if (now - lastReturnKeyPressTime < 600) {
             e.preventDefault()
+            setIsReturnKeyPressed(false)
          } else {
-            setLastKeyPressTime(now)
+            if (!isSearchQueryEmpty) {
+               setIsReturnKeyPressed(true)
+               timeout = setTimeout(() => {
+                  setIsReturnKeyPressed(false)
+               }, 250)
+            }
+            setLastReturnKeyPressTime(now)
          }
       }
    }
@@ -102,6 +119,7 @@ export function Toolbar({
                   className="mr-auto flex items-center"
                   onSubmit={(e) => {
                      e.preventDefault()
+                     if (!isClient || isSearchQueryEmpty) return
 
                      onSubmit()
                   }}
@@ -109,8 +127,15 @@ export function Toolbar({
                   <Input
                      value={searchQuery}
                      onKeyUp={(e) => {
+                        //submit when input is empty
                         const target = e.target as HTMLInputElement
-                        if (target.value === "") onSubmit()
+                        if (
+                           target.value === "" &&
+                           isClient &&
+                           e.key !== "Enter" &&
+                           !e.ctrlKey
+                        )
+                           onSubmit()
                      }}
                      onChange={(e) => {
                         setSearchQuery(e.target.value)
@@ -161,16 +186,17 @@ export function Toolbar({
                   }}
                   exit={{ opacity: 0 }}
                   transition={{ ease: "circInOut", duration: 0.2 }}
-                  className="absolute right-1.5 flex-shrink-0"
+                  className={cn("absolute right-1.5 flex-shrink-0")}
                >
                   <Button
-                     disabled={searchQuery.trim() === ""}
+                     disabled={isSearchQueryEmpty || !isClient}
                      aria-label="Search notes"
                      onClick={() => {
                         onSubmit()
                      }}
                      size={"icon"}
                      variant={"ghost"}
+                     data-pressed={isReturnKeyPressed}
                   >
                      <CornerDownLeft className={"size-6 opacity-60"} />
                   </Button>

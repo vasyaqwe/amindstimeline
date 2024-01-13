@@ -186,7 +186,10 @@ export function NotesList({ initialNotes }: NotesListProps) {
    return (
       <div className="lg:pt-3">
          <Toolbar
-            onSubmit={refetch}
+            onSubmit={() => {
+               void refetch()
+               document.documentElement.scrollTo({ top: 0, behavior: "smooth" })
+            }}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
          />
@@ -202,7 +205,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
 
          {searchQuery.length > 0 && notes.length < 1 && !isFetching && (
             <p className="mt-5 text-center font-accent text-5xl">
-               No results found.
+               No notes found.
             </p>
          )}
          {initialNotes.length < 1 && (
