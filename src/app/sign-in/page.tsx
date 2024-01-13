@@ -1,5 +1,5 @@
 import { cookies } from "next/headers"
-import { createClient } from "@/lib/supabase/server"
+import { useSupabaseServer } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import logo from "@public/logo.png"
@@ -11,7 +11,7 @@ export default async function Login({
    searchParams: { message: string }
 }) {
    const cookieStore = cookies()
-   const supabase = createClient(cookieStore)
+   const supabase = useSupabaseServer(cookieStore)
 
    const {
       data: { session },
@@ -21,9 +21,6 @@ export default async function Login({
 
    const signIn = async () => {
       "use server"
-
-      const cookieStore = cookies()
-      const supabase = createClient(cookieStore)
 
       const baseUrl =
          process.env.NODE_ENV === "development"
@@ -80,7 +77,7 @@ export default async function Login({
             Continue with Google
          </Button>
          {searchParams?.message && (
-            <p className="mt-4 bg-foreground/10 p-4 text-center text-foreground">
+            <p className="mt-4 p-4 text-center text-destructive">
                {searchParams.message}
             </p>
          )}
