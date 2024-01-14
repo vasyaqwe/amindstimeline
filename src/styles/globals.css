@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 @layer base {
   :root {
     --avatar-size: 30px;
@@ -9,7 +10,7 @@
     --background: 0 0% 6%;
     --foreground: 0 0% 88%;
 
-    --popover: 240 5% 60%;
+    --popover: 240 5% 75%;
     --popover-foreground: 0 0% 60%;
 
     --primary: 240 5% 9%;

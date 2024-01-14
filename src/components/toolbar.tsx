@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useEventListener } from "@/hooks/use-event-listener"
 import { useIsClient } from "@/hooks/use-is-client"
-import { cn } from "@/lib/utils"
+import { cn, isMobile } from "@/lib/utils"
 import { ArrowUpIcon, MagnifyingGlassIcon } from "@heroicons/react/20/solid"
 import { AnimatePresence, motion } from "framer-motion"
 import { CornerDownLeft } from "lucide-react"
@@ -12,7 +12,6 @@ import {
    type KeyboardEvent,
    type Dispatch,
    type SetStateAction,
-   useEffect,
 } from "react"
 import { flushSync } from "react-dom"
 
@@ -26,7 +25,7 @@ export function Toolbar({
    setSearchQuery: Dispatch<SetStateAction<string>>
 }) {
    const { isClient } = useIsClient()
-   const [y, setY] = useState(0)
+
    const [lastReturnKeyPressTime, setLastReturnKeyPressTime] = useState(0)
    const [isReturnKeyPressed, setIsReturnKeyPressed] = useState(false)
 
@@ -35,16 +34,6 @@ export function Toolbar({
    const searchInputRef = useRef<HTMLInputElement>(null)
 
    const isSearchQueryEmpty = searchQuery.trim() === ""
-
-   useEffect(() => {
-      if (isClient) setY(window.visualViewport?.height ?? 0)
-   }, [isClient, expanded])
-
-   useEventListener("resize", () => {
-      if (!isClient) return
-
-      setY(window.visualViewport?.height ?? 0)
-   })
 
    useEventListener("keydown", (e) => {
       if (e.key === "k" && e.ctrlKey) {
@@ -91,10 +80,10 @@ export function Toolbar({
 
    return (
       <motion.div
-         //fix toolbar going behind ios keyboard
+         //toolbar going behind ios keyboard :(
          style={{
-            top: y > 0 ? y - 80 : "auto",
-            bottom: isClient ? "auto" : 30,
+            top: expanded && isMobile() ? 20 : "auto",
+            bottom: expanded && isMobile() ? "auto" : 25,
          }}
          initial={false}
          animate={{ width: expanded ? 320 : 100 }}
@@ -104,12 +93,12 @@ export function Toolbar({
          <Button
             onClick={() => {
                flushSync(() => setExpanded(!expanded))
-               searchInputRef.current?.focus()
+               if (!expanded) searchInputRef.current?.focus()
             }}
             size={"icon"}
             variant={"ghost"}
             aria-label="Search notes"
-            className="absolute left-1.5 flex-shrink-0"
+            className="absolute left-1.5 flex-shrink-0 hover:bg-border"
          >
             <MagnifyingGlassIcon className="size-6 opacity-60" />
          </Button>
@@ -147,7 +136,7 @@ export function Toolbar({
                      onChange={(e) => {
                         setSearchQuery(e.target.value)
                      }}
-                     className="border-none bg-transparent px-10 py-1 text-base"
+                     className="border-none bg-transparent px-10 py-1 text-base placeholder:text-foreground/40"
                      ref={searchInputRef}
                      onBlur={() => {
                         searchQuery === "" && setExpanded(false)
@@ -201,6 +190,7 @@ export function Toolbar({
                      aria-label="Search notes"
                      size={"icon"}
                      variant={"ghost"}
+                     className="hover:bg-border data-[pressed=true]:bg-border"
                      data-pressed={isReturnKeyPressed}
                   >
                      <CornerDownLeft className={"size-6 opacity-60"} />
@@ -222,6 +212,7 @@ export function Toolbar({
                      onClick={scrollToTop}
                      size={"icon"}
                      variant={"ghost"}
+                     className="hover:bg-border"
                   >
                      <ArrowUpIcon className="size-6 opacity-60" />
                   </Button>
