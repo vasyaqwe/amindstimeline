@@ -89,7 +89,7 @@ export function CreateNoteForm() {
    })
 
    return (
-      <div className="border-b border-border/50 pb-7 lg:mx-24">
+      <div className="relative border-b border-border/50 pb-7 lg:mx-24">
          <Editor
             editor={editor}
             isPending={isPending}
@@ -99,29 +99,27 @@ export function CreateNoteForm() {
                mutate({ content, id: `optimistic-${Date.now()}` })
             }}
          >
-            {editor && (
-               <Hint
-                  aria-label="Create note"
-                  content={
-                     <div className="flex">
-                        Create note <CornerDownLeft className="ml-2 size-5" />
-                     </div>
+            <Hint
+               aria-label="Create note"
+               content={
+                  <div className="flex">
+                     Create note <CornerDownLeft className="ml-2 size-5" />
+                  </div>
+               }
+               className="ml-auto flex"
+            >
+               <Button
+                  disabled={
+                     !editor ||
+                     (editor.getText().length < 1 &&
+                        !editor.getHTML().includes("img"))
                   }
-                  className="ml-auto flex"
+                  variant={"ghost"}
+                  size={"icon"}
                >
-                  <Button
-                     disabled={
-                        editor.getText().length < 1 &&
-                        !editor.getHTML().includes("img")
-                     }
-                     variant={"ghost"}
-                     className="px-0.5"
-                     size={"icon"}
-                  >
-                     <PlusIcon className="size-8 opacity-60" />
-                  </Button>
-               </Hint>
-            )}
+                  <PlusIcon className="size-8 opacity-60" />
+               </Button>
+            </Hint>
          </Editor>
       </div>
    )

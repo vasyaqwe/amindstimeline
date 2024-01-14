@@ -184,7 +184,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
    )
 
    return (
-      <div className="lg:pt-3">
+      <div className="pt-5 lg:pt-3">
          <Toolbar
             onSubmit={refetch}
             searchQuery={searchQuery}
@@ -234,9 +234,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
                              <span
                                 className={cn(
                                    "ml-1 inline-block text-lg text-accent",
-                                   groupIdx === 0
-                                      ? "max-lg:mt-4"
-                                      : "max-lg:mt-3"
+                                   groupIdx === 0 ? "" : "max-lg:mt-3"
                                 )}
                              >
                                 {group[1].length > NOTES_LIMIT - 1
@@ -261,7 +259,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
                                       editingNoteId={editingNoteId}
                                       setEditingNoteId={setEditingNoteId}
                                       note={note}
-                                      noteIdx={noteIdx}
+                                      groupIdx={groupIdx}
                                       optimisticNotesIdsMap={
                                          optimisticNotesIdsMap
                                       }
@@ -291,7 +289,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
 
 type EditorOutputProps = {
    note: Note
-   noteIdx: number
+   groupIdx: number
    editingNoteId: string | null
    setEditingNoteId: Dispatch<SetStateAction<string | null>>
    setDeletedIds: Dispatch<SetStateAction<string[]>>
@@ -300,7 +298,7 @@ type EditorOutputProps = {
 
 const EditorOutput = ({
    note,
-   noteIdx,
+   groupIdx,
    setDeletedIds,
    setEditingNoteId,
    editingNoteId,
@@ -556,14 +554,14 @@ const EditorOutput = ({
             <div
                className={cn(
                   "overflow-hidden [&>*]:mt-4",
-                  !isEditing && noteIdx !== 1 ? "bg-background" : ""
+                  !isEditing && groupIdx > 1 ? "bg-background" : ""
                )}
             >
                {isEditing ? (
                   <Editor
                      data-hovered={isEditing}
                      toolbarStyle="floating"
-                     className="!min-h-[auto]"
+                     className={"!min-h-[auto]"}
                      onSubmit={() => {
                         onUpdate({ id: noteId })
                      }}

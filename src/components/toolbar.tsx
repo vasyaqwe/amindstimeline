@@ -136,7 +136,7 @@ export function Toolbar({
                      onChange={(e) => {
                         setSearchQuery(e.target.value)
                      }}
-                     className="border-none bg-transparent px-10 py-1 text-base placeholder:text-foreground/40"
+                     className="border-none bg-transparent px-10 py-1 text-base placeholder:text-foreground/30"
                      ref={searchInputRef}
                      onBlur={() => {
                         searchQuery === "" && setExpanded(false)
