@@ -3,9 +3,10 @@
 import { Hint } from "@/components/hint"
 import { Button } from "@/components/ui/button"
 import { Editor } from "@/components/ui/editor"
-import { notesMutationKey, notesQueryKey } from "@/config"
+import { NOTES_LIMIT, notesMutationKey, notesQueryKey } from "@/config"
 import { useEditor } from "@/hooks/use-editor"
 import { useSupabaseClient } from "@/lib/supabase/client"
+import { chunk } from "@/lib/utils"
 import { type Note } from "@/types/supabase"
 import { PlusIcon } from "@heroicons/react/20/solid"
 import {
@@ -14,6 +15,7 @@ import {
    useQueryClient,
 } from "@tanstack/react-query"
 import { CornerDownLeft } from "lucide-react"
+import { nanoid } from "nanoid"
 import { useState } from "react"
 import { toast } from "sonner"
 
@@ -24,7 +26,13 @@ export function CreateNoteForm() {
 
    const { mutate, isPending } = useMutation({
       mutationKey: notesMutationKey,
-      mutationFn: async ({ content, id }: { content: string; id: string }) => {
+      mutationFn: async ({
+         content,
+         optimisticId,
+      }: {
+         content: string
+         optimisticId: string
+      }) => {
          const { data, error } = await supabase
             .from("notes")
             .insert({ content })
@@ -34,14 +42,38 @@ export function CreateNoteForm() {
          if (error) {
             throw error
          } else {
-            return { ...data, optimisticId: id }
+            return { ...data, optimisticId }
          }
       },
-      onSuccess: async () => {
+      onSuccess: async (createdNote) => {
+         const previousNotes = queryClient.getQueryData<InfiniteData<Note[]>>(
+            notesQueryKey
+         ) ?? { pageParams: [1], pages: [[]] }
+
+         if (createdNote) {
+            //add actual id to created note (can't invalidateQueries bc it will remount & trigger unwanted animation)
+            const updatedNotes = previousNotes.pages.flatMap((notes) =>
+               notes.map((n, idx) =>
+                  idx === 0
+                     ? {
+                          ...n,
+                          id: createdNote.id,
+                       }
+                     : n
+               )
+            )
+
+            queryClient.setQueryData<InfiniteData<Note[]>>(notesQueryKey, {
+               ...previousNotes,
+               pages: chunk(updatedNotes, NOTES_LIMIT),
+            })
+         }
+
          setContent("")
+
          await resetEditor()
       },
-      onMutate: async ({ content, id }) => {
+      onMutate: async ({ content, optimisticId }) => {
          await queryClient.cancelQueries({ queryKey: notesQueryKey })
 
          editor?.commands.clearContent()
@@ -49,6 +81,7 @@ export function CreateNoteForm() {
          const previousNotes = queryClient.getQueryData<InfiniteData<Note[]>>(
             notesQueryKey
          ) ?? { pageParams: [1], pages: [[]] }
+         console.log(previousNotes)
 
          queryClient.setQueryData<InfiniteData<Note[]>>(notesQueryKey, {
             ...previousNotes,
@@ -57,7 +90,7 @@ export function CreateNoteForm() {
                   ? [
                        {
                           content,
-                          id,
+                          optimisticId,
                           created_at: new Date().toString(),
                           created_by: "",
                        },
@@ -73,13 +106,15 @@ export function CreateNoteForm() {
          toast.error("Failed to create note, something went wrong")
          queryClient.setQueryData(notesQueryKey, context?.previousNotes)
       },
-      // onSettled: async (_, error) => {
-      //    await new Promise((resolve) => setTimeout(resolve, 3000))
-      //    //delay for animation to complete
-      //    if (error) {
-      //    return await queryClient.invalidateQueries({ queryKey: notesQueryKey })
-      //    }
-      // },
+      onSettled: async (_, error) => {
+         // await new Promise((resolve) => setTimeout(resolve, 3000))
+
+         if (error) {
+            return await queryClient.invalidateQueries({
+               queryKey: notesQueryKey,
+            })
+         }
+      },
    })
 
    const { editor, onImagePaste, onImageChange, resetEditor } = useEditor({
@@ -96,7 +131,7 @@ export function CreateNoteForm() {
             onImageChange={onImageChange}
             onImagePaste={onImagePaste}
             onSubmit={() => {
-               mutate({ content, id: `optimistic-${Date.now()}` })
+               mutate({ content, optimisticId: nanoid() })
             }}
          >
             <Hint

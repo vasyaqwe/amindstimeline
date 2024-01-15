@@ -4,12 +4,7 @@
 import { motion } from "framer-motion"
 import { type Note } from "@/types/supabase"
 import { Loading } from "@/components/ui/loading"
-import {
-   NOTES_LIMIT,
-   notesMutationKey,
-   notesQueryKey,
-   motionProps,
-} from "@/config"
+import { NOTES_LIMIT, notesQueryKey, motionProps } from "@/config"
 import { useIntersection } from "@/hooks/use-intersection"
 import {
    type TypedSupabaseClient,
@@ -17,7 +12,6 @@ import {
 } from "@/lib/supabase/client"
 import {
    useInfiniteQuery,
-   useMutationState,
    useMutation,
    useQueryClient,
    type InfiniteData,
@@ -40,7 +34,6 @@ import {
    groupByDate,
    parseCodeBlocks,
    pick,
-   reverseKeysWithValues,
 } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -113,29 +106,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
    const { previewImageSrc } = useGlobalStore()
 
    const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
-
-   const createdNotes = useMutationState<Note & { optimisticId: string }>({
-      filters: { mutationKey: notesMutationKey, status: "success" },
-      select: (mutation) =>
-         mutation.state.data as Note & { optimisticId: string },
-   })
-
    const [deletedIds, setDeletedIds] = useState<string[]>([])
-
-   //Record<optimisticId, realId>, which is used to retrieve real id where needed
-   const [optimisticNotesIdsMap, setOptimisticNotesIdsMap] = useState<
-      Record<string, string>
-   >({})
-   //this weird trick is required to make framer motion work with query invalidation (id changes from optimistic to real > animation triggers)
-   useEffect(() => {
-      setOptimisticNotesIdsMap(() =>
-         createdNotes.reduce((acc: Record<string, string>, curr) => {
-            acc[curr.optimisticId] = curr.id
-            return acc
-         }, {})
-      )
-   }, [createdNotes])
-
    const [searchQuery, setSearchQuery] = useState("")
 
    const {
@@ -179,7 +150,9 @@ export function NotesList({ initialNotes }: NotesListProps) {
 
    const notes = Object.entries(
       groupByDate(
-         data.pages?.flat().filter((n) => !deferredDeletedIds.includes(n.id))
+         data.pages
+            ?.flat()
+            .filter((n) => !deferredDeletedIds.includes(n?.id ?? ""))
       )
    )
 
@@ -245,7 +218,7 @@ export function NotesList({ initialNotes }: NotesListProps) {
                           <AnimatePresence initial={false}>
                              {group[1].map((note, noteIdx) => (
                                 <motion.div
-                                   key={note.id}
+                                   key={note.optimisticId ?? note.id}
                                    style={{
                                       zIndex:
                                          note.id === editingNoteId
@@ -260,9 +233,6 @@ export function NotesList({ initialNotes }: NotesListProps) {
                                       setEditingNoteId={setEditingNoteId}
                                       note={note}
                                       groupIdx={groupIdx}
-                                      optimisticNotesIdsMap={
-                                         optimisticNotesIdsMap
-                                      }
                                       setDeletedIds={setDeletedIds}
                                    />
                                 </motion.div>
@@ -293,7 +263,6 @@ type EditorOutputProps = {
    editingNoteId: string | null
    setEditingNoteId: Dispatch<SetStateAction<string | null>>
    setDeletedIds: Dispatch<SetStateAction<string[]>>
-   optimisticNotesIdsMap: Record<string, string>
 }
 
 const EditorOutput = ({
@@ -302,19 +271,14 @@ const EditorOutput = ({
    setDeletedIds,
    setEditingNoteId,
    editingNoteId,
-   optimisticNotesIdsMap,
 }: EditorOutputProps) => {
    const supabase = useSupabaseClient()
    const queryClient = useQueryClient()
    const { showDialog } = useGlobalStore()
    const { isClient } = useIsClient()
 
-   const [shouldAnimate, setShouldAnimate] = useState(
-      note.id.startsWith("optimistic")
-   )
+   const [shouldAnimate, setShouldAnimate] = useState(!!note.optimisticId)
    const [content, setContent] = useState(note.content ?? "")
-
-   const isOptimistic = note.id.startsWith("optimistic")
 
    const { mutate: onDelete } = useMutation({
       mutationFn: async ({ id }: { id: string }) => {
@@ -366,14 +330,9 @@ const EditorOutput = ({
          ) ?? { pageParams: [1], pages: [[]] }
 
          if (updatedNote) {
-            const reversedOptimisticNotesIdsMap: Record<string, string> =
-               reverseKeysWithValues(optimisticNotesIdsMap)
-
             const updatedNotes = previousNotes.pages.flatMap((notes) =>
                notes.map((n) =>
-                  n.id ===
-                  (reversedOptimisticNotesIdsMap[updatedNote.id] ??
-                     updatedNote.id)
+                  n.id === updatedNote.id
                      ? {
                           ...n,
                           content: updatedNote?.content,
@@ -428,12 +387,6 @@ const EditorOutput = ({
       if (e.key === "Escape") onCancelEditing()
    })
 
-   const noteId = isOptimistic
-      ? optimisticNotesIdsMap[note.id] ?? note.id
-      : note.id
-
-   const isEditing = editingNoteId === note.id
-
    const _content = useMemo(() => {
       return content.includes("<code>")
          ? parseCodeBlocks({
@@ -442,10 +395,14 @@ const EditorOutput = ({
          : content
    }, [content])
 
+   const noteId = note.id
+
+   const isEditing = editingNoteId === noteId
+
    return (
       <>
          {isClient &&
-            editingNoteId === note.id &&
+            editingNoteId === noteId &&
             createPortal(
                <div
                   onClick={() => onCancelEditing()}
@@ -454,13 +411,13 @@ const EditorOutput = ({
                />,
                document.body
             )}
-         {(noteId || !isOptimistic) && (
+         {noteId && (
             <div
                data-visible={isEditing}
                className={`peer absolute right-0 z-[1] mt-4 flex scale-[85%] overflow-hidden rounded-md
                 border opacity-0
                 transition 
-                duration-300
+                duration-200
                 focus-within:scale-100 
                 focus-within:opacity-100 
                 group-hover:scale-100
@@ -478,7 +435,7 @@ const EditorOutput = ({
                      disabled={isUpdatePending}
                      size={"icon"}
                      className={cn(
-                        "rounded-none border-none text-foreground/60",
+                        "rounded-none border-none text-foreground/60 focus-visible:bg-border/50 focus-visible:ring-transparent focus-visible:ring-offset-0",
                         !isUpdatePending
                            ? "hover:border-[#16a34a]/25 hover:text-[#16a34a]/60"
                            : ""
@@ -495,10 +452,10 @@ const EditorOutput = ({
                   <Button
                      aria-label="Edit note"
                      size={"icon"}
-                     className="rounded-none border-none text-foreground/60"
+                     className="rounded-none border-none text-foreground/60  focus-visible:bg-border/50 focus-visible:ring-transparent focus-visible:ring-offset-0"
                      onClick={() => {
                         setShouldAnimate(false)
-                        setEditingNoteId(note.id)
+                        setEditingNoteId(noteId)
 
                         if (editor) editor.commands.focus("end")
                      }}
@@ -510,7 +467,7 @@ const EditorOutput = ({
                   <Button
                      aria-label="Cancel editing"
                      size={"icon"}
-                     className="rounded-none border-none text-foreground/60"
+                     className="rounded-none border-none text-foreground/60 focus-visible:bg-border/50 focus-visible:ring-transparent focus-visible:ring-offset-0"
                      onClick={onCancelEditing}
                   >
                      <XMarkIcon className="size-7 fill-current" />
@@ -519,9 +476,9 @@ const EditorOutput = ({
                   <Button
                      aria-label="Delete note"
                      size={"icon"}
-                     className="rounded-none border-none text-foreground/60 hover:text-destructive/60"
+                     className="rounded-none border-none text-foreground/60 hover:text-destructive/60 focus-visible:bg-border/50 focus-visible:ring-transparent focus-visible:ring-offset-0"
                      onClick={() => {
-                        setDeletedIds((prev) => [...prev, note.id])
+                        setDeletedIds((prev) => [...prev, noteId])
                         toast.success("Note deleted", {
                            duration: 3000,
                            onAutoClose: () =>
@@ -536,7 +493,7 @@ const EditorOutput = ({
                               label: "Undo",
                               onClick: () =>
                                  setDeletedIds((prev) =>
-                                    prev.filter((id) => id !== note.id)
+                                    prev.filter((id) => id !== noteId)
                                  ),
                            },
                         })
@@ -547,10 +504,7 @@ const EditorOutput = ({
                )}
             </div>
          )}
-         <div
-            id={note.id}
-            className="group relative z-[2]"
-         >
+         <div className="group relative z-[2]">
             <div
                className={cn(
                   "overflow-hidden [&>*]:mt-4",

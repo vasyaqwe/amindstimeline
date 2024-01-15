@@ -145,10 +145,3 @@ export function parseCodeBlocks({ content }: { content: string }) {
    }
    return splitChunks.join("")
 }
-
-export function reverseKeysWithValues(obj: Record<string, string>) {
-   return Object.entries(obj).reduce(
-      (acc, [key, value]) => ({ ...acc, [value]: key }),
-      {}
-   )
-}

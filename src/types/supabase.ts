@@ -1,7 +1,10 @@
 export type Row<T extends keyof Database["public"]["Tables"]> =
    Database["public"]["Tables"][T]["Row"]
 
-export type Note = Row<"notes">
+export type Note = Omit<Row<"notes">, "id"> & {
+   optimisticId?: string
+   id?: string
+}
 
 export type Json =
    | string
