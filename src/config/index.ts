@@ -1,6 +1,6 @@
 import { type MotionProps } from "framer-motion"
 
-export const NOTES_LIMIT = 16
+export const NOTES_LIMIT = 11
 
 export const notesQueryKey = ["notes"]
 
