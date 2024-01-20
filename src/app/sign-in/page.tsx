@@ -22,6 +22,10 @@ export default async function Login({
    const signIn = async () => {
       "use server"
 
+      const cookieStore = cookies()
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const supabase = useSupabaseServer(cookieStore)
+
       const baseUrl =
          process.env.NODE_ENV === "development"
             ? "http://localhost:3000"

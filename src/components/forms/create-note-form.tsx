@@ -81,7 +81,6 @@ export function CreateNoteForm() {
          const previousNotes = queryClient.getQueryData<InfiniteData<Note[]>>(
             notesQueryKey
          ) ?? { pageParams: [1], pages: [[]] }
-         console.log(previousNotes)
 
          queryClient.setQueryData<InfiniteData<Note[]>>(notesQueryKey, {
             ...previousNotes,
