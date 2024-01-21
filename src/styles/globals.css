@@ -53,6 +53,10 @@
   font-feature-settings: unset !important;
 }
 
+.prose {
+  white-space: break-spaces;
+}
+
 .prose pre {
   white-space: pre-wrap;
 }
